@@ -52,7 +52,7 @@ textarea.field{min-height:92px;resize:vertical}
 .opts{display:grid;gap:10px;margin-top:12px}
 .opt{display:flex;align-items:flex-start;gap:12px;text-align:left;border:2px solid var(--line);background:#fff;border-radius:14px;padding:12px;font-size:16px;color:var(--ink);min-height:56px;line-height:1.45;width:100%}
 .opt .ltr{flex:none;width:32px;height:32px;border-radius:10px;color:#fff;font-weight:800;display:grid;place-items:center}
-.opt:nth-child(6) .ltr{background:var(--o0)}
+.opt:nth-child(n+6) .ltr{background:var(--o0)}.opt:nth-child(7) .ltr{background:var(--o1)}.opt:nth-child(8) .ltr{background:var(--o2)}
 .opt:nth-child(1) .ltr{background:var(--o0)}.opt:nth-child(2) .ltr{background:var(--o1)}.opt:nth-child(3) .ltr{background:var(--o2)}.opt:nth-child(4) .ltr{background:var(--o3)}.opt:nth-child(5) .ltr{background:var(--o4)}
 .opt.sel{border-color:var(--teal);background:#E3F2F1}
 .opt.ok{border-color:var(--good);background:#E4F5EC}
@@ -169,6 +169,21 @@ textarea.field{min-height:92px;resize:vertical}
 .hboard .it>*{position:relative;z-index:1}
 .hboard .no{font-weight:900;color:var(--amber)}
 .hboard .sc{text-align:right;font-weight:900}
+.r5g{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:2.4vw;flex:1;min-height:0;align-items:stretch}
+.pks{display:grid;gap:1.1vh;align-content:start}
+.pk{display:grid;grid-template-columns:minmax(0,22em) 1fr 2.2em;align-items:center;gap:14px;font-weight:700}
+.pk .pkl{font-size:clamp(14px,2.1vh,24px);line-height:1.25}
+.pbar{height:2.4vh;min-height:12px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:#8CC5C0;border-radius:999px;transition:width .5s}
+.pk.top .pbar i{background:var(--amber)}
+.pk b{text-align:right;font-size:clamp(16px,2.6vh,28px)}
+.spotbox{background:rgba(255,255,255,.1);border-radius:20px;padding:2.4vh 2vw;display:flex;flex-direction:column;justify-content:center;gap:1.4vh;min-height:0}
+.spot-k{color:var(--amber);font-weight:800;letter-spacing:.1em;font-size:clamp(13px,1.8vh,20px)}
+.spot{font-size:clamp(20px,3.4vh,40px);font-weight:700;line-height:1.4;overflow-wrap:anywhere}
+.spot.empty{font-size:clamp(15px,2.2vh,24px);font-weight:600;color:#b9dcd9}
+.spot small{display:block;font-size:.55em;font-weight:600;color:#b9dcd9;margin-top:.6em}
+.spot.fade{animation:pop .6s both}
+.spot-n{color:#b9dcd9;font-size:clamp(12px,1.7vh,18px)}
 .wall{columns:3 260px;column-gap:1.2vw;flex:1;overflow:hidden}
 .wall .wc{break-inside:avoid;background:rgba(255,255,255,.12);border-radius:16px;padding:1.2vh 1vw;margin-bottom:1.2vh;font-size:clamp(15px,1.6vw,28px);font-weight:600;border-left:8px solid var(--rt);animation:pop .4s both}
 .wall .wc.p{border-color:var(--rp)}.wall .wc.s{border-color:var(--rs)}.wall .wc.o{border-color:var(--ro)}
@@ -353,7 +368,7 @@ const STAGES = [
   { id: "r2", short: "R2", name: "翻譯機搶答" },
   { id: "r3", short: "R3", name: "嵌入大挑戰" },
   { id: "r4", short: "R4", name: "溝通小劇場" },
-  { id: "r5", short: "R5", name: "行動承諾牆" },
+  { id: "r5", short: "R5", name: "行動承諾" },
   { id: "qa", short: "Q&A", name: "提問牆" },
   { id: "end", short: "結束", name: "謝謝大家" },
 ];
@@ -416,7 +431,11 @@ const CONTENT = {
         x: "私下、先描述、說出善意的猜測，再回到 IEP 的共同目標並邀請約定。避免在孩子面前糾正，也避免把問題丟給第三人。" },
     ],
   },
-  pledgeHint: "本週，我會……（例如：用「描述—理解—邀請」聯絡一位家長）",
+  pledgeHint: "本週，我會……",
+  r5: {
+    hint: "最多選 3 項（可隨時改選）。想補一句自己的話也可以，選填。",
+    opts: ["用「描述—理解—邀請」聯絡一位家長", "家長晤談時，先說一個孩子的亮點", "把一個 IEP 目標放進點心或轉銜時間", "請治療師把建議改成「教室做得到」的版本", "把專業術語翻成「看得到的行為」", "每週花 10 分鐘和助理員／導師對齊目標", "先問家長「在家看到什麼」再給建議", "把今天學到的一個方法分享給同事"],
+  },
   warmHint: "此刻的你，比較像哪一種狀態？",
   warmOpts: ["期待，想學幾招帶回去", "好奇，想聽聽不同角度", "有點累，先慢慢聽", "有點緊張，怕跟不上", "帶著問題來，想找答案", "放鬆，來充電"],
 };
@@ -427,7 +446,7 @@ const roleKeys = ROLES.map((r) => r.k);
 function createState() {
   return {
     ver: 1, stage: "lobby", qi: -1, phase: "open", deadline: 0,
-    players: {}, warm: {}, r1: {}, ans: {}, r4: {}, revealed: {}, pledges: [], qs: [], seq: 1, created: Date.now(),
+    players: {}, warm: {}, r1: {}, ans: {}, r4: {}, revealed: {}, pledges: [], picks: {}, qs: [], seq: 1, created: Date.now(),
   };
 }
 function clean(t, max) { return String(t == null ? "" : t).replace(/[\u0000-\u001f\u007f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, max); }
@@ -521,11 +540,20 @@ function reduce(S, a, now, isHost) {
       const q = items(S)[S.qi], o = num(a.opt, q.o.length); if (o < 0) return { err: "bad" };
       const k = keyOf(S); S.r4[k] = S.r4[k] || {}; S.r4[k][pid] = o; bump(S); return { ok: 1 };
     }
-    case "pledge": {
+    case "pick": { // 行動承諾：從選項中最多選 3 項（再按一次＝取消）
       if (S.stage !== "r5") return { err: "closed" };
-      const x = clean(a.text, 80); if (!x) return { err: "empty" };
-      if (S.pledges.filter((p) => p.pid === pid).length >= 3) return { err: "limit" };
-      S.pledges.push({ id: S.seq++, pid, text: x, at: now }); bump(S); return { ok: 1 };
+      const o = num(a.opt, CONTENT.r5.opts.length); if (o < 0) return { err: "bad" };
+      S.picks = S.picks || {};
+      const cur = (S.picks[pid] || []).slice(), at = cur.indexOf(o);
+      if (at >= 0) cur.splice(at, 1); else { if (cur.length >= 3) return { err: "limit" }; cur.push(o); }
+      S.picks[pid] = cur; bump(S); return { ok: 1 };
+    }
+    case "pledge": { // 選填：自己補一句（每人 1 則，再送出會取代舊的）
+      if (S.stage !== "r5") return { err: "closed" };
+      const x = clean(a.text, 60); if (!x) return { err: "empty" };
+      const old = S.pledges.find((p) => p.pid === pid);
+      if (old) { old.text = x; old.at = now; } else S.pledges.push({ id: S.seq++, pid, text: x, at: now });
+      bump(S); return { ok: 1 };
     }
     case "ask": {
       const x = clean(a.text, 140); if (!x) return { err: "empty" };
@@ -603,7 +631,10 @@ function viewCommon(S, host, now) {
     c.answered = Object.keys(S.r4[k] || {}).length;
     if (shown) { c.q.a = q.a; c.q.x = q.x; c.dist = distOf(S.r4[k], q.o.length, S); }
   } else if (st === "r5") {
-    c.pledges = S.pledges.slice(-40).reverse().map((p) => ({ id: p.id, text: p.text, name: (S.players[p.pid] || {}).name || "", role: (S.players[p.pid] || {}).role || "o" }));
+    const pk = S.picks || {}, dist = CONTENT.r5.opts.map(() => 0); let people = 0, total = 0;
+    Object.keys(pk).forEach((pid) => { if (pk[pid].length) { people++; total += pk[pid].length; pk[pid].forEach((o) => { if (dist[o] != null) dist[o]++; }); } });
+    c.pickDist = dist; c.pickPeople = people; c.pickTotal = total;
+    c.pledges = S.pledges.slice(-30).reverse().map((p) => ({ id: p.id, text: p.text, name: (S.players[p.pid] || {}).name || "", role: (S.players[p.pid] || {}).role || "o" }));
     c.pledgeCount = S.pledges.length;
   }
   if ((isQuiz(st) && (shown || S.phase === "idle")) || st === "end") {
@@ -615,7 +646,7 @@ function viewCommon(S, host, now) {
     votes: q.votes.length, status: q.status, at: q.at,
   })).sort((a, b) => (a.status === "answered") - (b.status === "answered") || b.votes - a.votes || a.at - b.at).slice(0, 80);
   if (st === "end") {
-    c.summary = { players: c.count, pledges: S.pledges.length, questions: S.qs.length, answered: S.qs.filter((q) => q.status === "answered").length };
+    c.summary = { players: c.count, pledges: Object.keys(S.picks || {}).reduce((n, k) => n + S.picks[k].length, 0) + S.pledges.length, questions: S.qs.length, answered: S.qs.filter((q) => q.status === "answered").length };
   }
   return c;
 }
@@ -623,7 +654,7 @@ function viewMe(S, pid) {
   const p = S.players[pid];
   if (!p) return { joined: false };
   const b = board(S), st = S.stage, k = keyOf(S);
-  const me = { joined: true, k: st + ":" + S.qi, name: p.name, role: p.role, score: b.tot[pid] || 0, rank: b.anyRevealed ? b.rank[pid] : 0, warm: S.warm[pid] == null ? -1 : S.warm[pid], pledgeLeft: 3 - S.pledges.filter((x) => x.pid === pid).length, askLeft: 6 - S.qs.filter((x) => x.pid === pid).length };
+  const me = { joined: true, k: st + ":" + S.qi, name: p.name, role: p.role, score: b.tot[pid] || 0, rank: b.anyRevealed ? b.rank[pid] : 0, warm: S.warm[pid] == null ? -1 : S.warm[pid], picks: (S.picks || {})[pid] || [], pledgeText: (S.pledges.find((x) => x.pid === pid) || {}).text || "", askLeft: 6 - S.qs.filter((x) => x.pid === pid).length };
   me.voted = S.qs.filter((q) => q.votes.includes(pid)).map((q) => q.id);
   me.mine = S.qs.filter((q) => q.pid === pid).map((q) => q.id);
   if (st === "r1") me.pick = S.r1[pid] == null ? -1 : S.r1[pid];
@@ -637,7 +668,11 @@ function exportCsv(S) {
   const lines = [];
   lines.push("# 提問"); lines.push(["編號", "狀態", "票數", "提問者", "身分", "問題"].map(q).join(","));
   S.qs.slice().sort((a, b) => b.votes.length - a.votes.length).forEach((x) => lines.push([x.id, x.status, x.votes.length, x.anon ? "匿名" : (S.players[x.pid] || {}).name, x.anon ? "" : rn((S.players[x.pid] || {}).role), x.text].map(q).join(",")));
-  lines.push(""); lines.push("# 行動承諾"); lines.push(["暱稱", "身分", "承諾"].map(q).join(","));
+  lines.push(""); lines.push("# 行動承諾（各項人數）"); lines.push(["項目", "人數"].map(q).join(","));
+  CONTENT.r5.opts.forEach((t, i) => lines.push([t, Object.keys(S.picks || {}).filter((k) => S.picks[k].includes(i)).length].map(q).join(",")));
+  lines.push(""); lines.push("# 行動承諾（每人所選）"); lines.push(["暱稱", "身分", "所選項目"].map(q).join(","));
+  Object.keys(S.picks || {}).forEach((k) => lines.push([(S.players[k] || {}).name, rn((S.players[k] || {}).role), S.picks[k].map((i) => CONTENT.r5.opts[i]).join("；")].map(q).join(",")));
+  lines.push(""); lines.push("# 行動承諾（自己補的一句）"); lines.push(["暱稱", "身分", "承諾"].map(q).join(","));
   S.pledges.forEach((x) => lines.push([(S.players[x.pid] || {}).name, rn((S.players[x.pid] || {}).role), x.text].map(q).join(",")));
   lines.push(""); lines.push("# 溫度計（最難說得通的關係）"); lines.push(["選項", "老師", "家長", "專業人員", "其他", "合計"].map(q).join(","));
   distOf(S.r1, CONTENT.r1.opts.length, S).forEach((d, i) => lines.push([CONTENT.r1.opts[i], d.t, d.p, d.s, d.o, d.all].map(q).join(",")));
@@ -654,7 +689,7 @@ function exportCsv(S) {
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const roleOf = (k) => ROLES.find((r) => r.k === k) || ROLES[3];
-  const LTR = ["A", "B", "C", "D", "E", "F"];
+  const LTR = ["A", "B", "C", "D", "E", "F", "G", "H"];
   // 計時器：用背景執行緒（Web Worker）驅動，分頁被切到背景或被其他視窗蓋住時，也不會被瀏覽器降速（主持人頁面必須準時送出心跳）
   const ticker = (function () {
     let w = null, n = 0; const fns = {};
@@ -785,7 +820,14 @@ function exportCsv(S) {
         return;
       }
       if (act === "warmopt") { const i = +b.dataset.i, prev = me.warm; me.warm = i; fill(); const r = await send({ type: "warm", opt: i }); if (r.err) { me.warm = prev; fill(); } return; }
-      if (act === "pledge") { const v = q("#pledge").value; if (v.trim()) { const r = await send({ type: "pledge", text: v }); if (!r.err) q("#pledge").value = ""; } return; }
+      if (act === "pick") {
+        const i = +b.dataset.i, prev = (me.picks || []).slice(), cur = prev.slice(), at = cur.indexOf(i);
+        if (at >= 0) cur.splice(at, 1); else { if (cur.length >= 3) { q("#pl-left").textContent = "最多選 3 項，請先取消其中一項。"; return; } cur.push(i); }
+        me.picks = cur; fill();
+        const r = await send({ type: "pick", opt: i }); if (r.err) { me.picks = prev; fill(); }
+        return;
+      }
+      if (act === "pledge") { const v = q("#pledge").value; if (v.trim()) { const r = await send({ type: "pledge", text: v }); if (!r.err) { me.pledgeText = v.trim(); q("#pl-sent").textContent = "已送出，大螢幕會輪播。想改可以再送出一次。"; } } return; }
       if (act === "ask") { const v = q("#ask").value; if (v.trim()) { const r = await send({ type: "ask", text: v, anon: q("#anon").checked }); if (!r.err) q("#ask").value = ""; else q("#askerr").textContent = r.err === "limit" ? "每人最多送出 6 題" : "送出失敗"; } return; }
       if (act === "up") { await send({ type: "upvote", id: +b.dataset.id }); return; }
     });
@@ -855,10 +897,13 @@ function exportCsv(S) {
       }
       if (st === "r5") return {
         sig: "r5",
-        frame: '<div class="card"><p class="kick">R5 · 行動承諾牆</p><h2>' + esc(CONTENT.pledgeHint) + '</h2><textarea class="field" id="pledge" maxlength="80" placeholder="本週，我會……"></textarea><div style="height:10px"></div><button class="btn block" data-act="pledge">貼到承諾牆</button><p class="mute" id="pl-left"></p></div><div id="wall"></div>',
+        frame: '<div class="card"><p class="kick">R5 · 行動承諾</p><h2>' + esc(CONTENT.pledgeHint) + '</h2><p class="mute">' + esc(CONTENT.r5.hint) + '</p><div class="opts">' + CONTENT.r5.opts.map((t, i) => '<button class="opt" data-act="pick" data-i="' + i + '" id="k' + i + '"><span class="ltr">' + LTR[i] + '</span><span>' + esc(t) + "</span></button>").join("") + '</div><p class="mute" id="pl-left" style="margin-top:10px"></p></div>' +
+          '<div class="card"><p class="kick">選填</p><h2>想補一句自己的話？</h2><textarea class="field" id="pledge" maxlength="60" placeholder="本週，我還會……（最多 60 字）"></textarea><div style="height:10px"></div><button class="btn block" data-act="pledge">送出這一句</button><p class="mute" id="pl-sent"></p></div>',
         fill() {
-          q("#pl-left").textContent = me.pledgeLeft > 0 ? "還可以再貼 " + me.pledgeLeft + " 則" : "已貼滿 3 則，謝謝！";
-          q("#wall").innerHTML = (c.pledges || []).slice(0, 12).map((p) => '<div class="wallcard ' + p.role + '">' + esc(p.text) + "<small>" + esc(p.name) + "</small></div>").join("");
+          const pk = me.picks || [];
+          CONTENT.r5.opts.forEach((_, i) => { const b = q("#k" + i); if (b) b.classList.toggle("sel", pk.includes(i)); });
+          q("#pl-left").textContent = pk.length ? "已選 " + pk.length + " / 3 項" + (pk.length >= 3 ? "，可再點一次取消或改選。" : "。") : "點選你本週會做的事（最多 3 項）。";
+          const pl = q("#pledge"); if (pl && me.pledgeText && !pl.value && document.activeElement !== pl) pl.value = me.pledgeText;
         },
       };
       if (st === "qa") return { sig: "qahint", frame: '<div class="wait card"><p class="kick">Q&A</p><h2>歡迎提問</h2><p class="mute">請切換到下方「提問」分頁，送出你的問題，也可以替想聽的問題按讚。</p></div>', fill() {} };
@@ -937,6 +982,17 @@ function exportCsv(S) {
     T.onStatus(() => {});
     const nowS = () => Date.now() + offset;
     const stIdx = () => STAGE_IDS.indexOf(V.c.stage);
+    let spotI = 0;
+    function showSpot() { // 補充的一句：一次只輪播一張，畫面保持清爽
+      const el = q("#spot"); if (!el || !V) return;
+      const l = V.c.pledges || [], n = l.length;
+      if (!n) { el.textContent = "手機上寫下的補充，會在這裡輪播。"; el.classList.add("empty"); q("#spotn").textContent = ""; return; }
+      const p = l[spotI % n]; el.classList.remove("empty");
+      const html = esc(p.text) + "<small>— " + esc(p.name) + "</small>";
+      if (el.dataset.id !== p.id + ":" + p.text) { el.dataset.id = p.id + ":" + p.text; el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); el.innerHTML = html; }
+      q("#spotn").textContent = (spotI % n + 1) + " / " + n;
+    }
+    setInterval(() => { if (V && V.c.stage === "r5") { spotI++; showSpot(); } }, 6000);
 
     function primary() {
       const c = V.c, st = c.stage, n = (isQuizStage(st) ? CONTENT[st].qs : st === "r4" ? CONTENT.r4.qs : []).length;
@@ -1043,10 +1099,12 @@ function exportCsv(S) {
       }
       if (st === "r5") return {
         sig: "r5",
-        frame: topHtml("R5 · " + sh.name, esc(CONTENT.pledgeHint.split("（")[0]), '<span id="pc"></span>　請用手機貼上你的承諾') + '<div class="wall" id="wall"></div>',
+        frame: topHtml("R5 · " + sh.name, esc(CONTENT.pledgeHint), '<span id="pc"></span>') + '<div class="r5g"><div class="pks">' + CONTENT.r5.opts.map((t, i) => '<div class="pk" id="pk' + i + '"><span class="pkl">' + esc(t) + '</span><div class="pbar"><i></i></div><b>0</b></div>').join("") + '</div><div class="spotbox"><div class="spot-k">大家補充的一句</div><div class="spot" id="spot"></div><div class="spot-n" id="spotn"></div></div></div>',
         fill() {
-          q("#pc").textContent = "已有 " + (c.pledgeCount || 0) + " 則承諾";
-          q("#wall").innerHTML = (c.pledges || []).map((p) => '<div class="wc ' + p.role + '">' + esc(p.text) + "<small>— " + esc(p.name) + "</small></div>").join("");
+          q("#pc").textContent = "已有 " + (c.pickPeople || 0) + " 人完成選擇　請用手機選出你本週會做的事（最多 3 項）";
+          const d = c.pickDist || [], mx = Math.max(0, ...d);
+          CONTENT.r5.opts.forEach((_, i) => { const r = q("#pk" + i); r.querySelector("i").style.width = (mx ? (d[i] || 0) / mx * 100 : 0) + "%"; r.querySelector("b").textContent = d[i] || 0; r.classList.toggle("top", mx > 0 && d[i] === mx); });
+          showSpot();
         },
       };
       if (st === "qa") return {
@@ -1099,7 +1157,7 @@ function exportCsv(S) {
   /* ====================== 示範模式的模擬觀眾 ====================== */
   function startBots(hub, n) {
     const names = ["小米老師", "阿凱爸爸", "林治療師", "Amy", "王主任", "小安媽媽", "陳老師", "志明", "雅婷", "Peter", "佳玲老師", "大宇爸", "語言治療師小蔡", "OT 阿華", "小橘", "品妍", "子晴媽媽", "老周", "Joyce", "心怡", "阿嬤", "怡君老師", "小葵", "宗翰", "芳瑜"];
-    const pledges = ["用「描述—理解—邀請」聯絡一位家長", "把一個 IEP 目標放進點心時間", "請治療師把建議改成嵌入式版本", "每週和助理員花 10 分鐘對齊目標", "家長晤談先說一個亮點"];
+    const pledges = ["下週先跟助理員約 10 分鐘", "試著把術語寫成『看得到』的句子", "在聯絡簿多寫一句孩子的亮點", "邀請家長帶一段在家的影片"];
     const asks = ["家長不願意接受評估時，老師可以做什麼？", "助理員怎麼和導師建立共識？", "治療師的建議在教室做不到時怎麼辦？", "疑似生的轉介時機要怎麼把握？"];
     const bots = [];
     const have = bots.length + Object.keys(hub.S.players).filter((p) => p.startsWith("bot-")).length;
@@ -1121,7 +1179,7 @@ function exportCsv(S) {
         else if ((st === "r2" || st === "r3") && S.phase === "open" && !(S.ans[k] || {})[b.pid]) {
           const qq = (st === "r2" ? CONTENT.r2 : CONTENT.r3).qs[S.qi]; hub.act(b.pid, false, { type: "answer", opt: Math.random() < 0.65 ? qq.a : Math.floor(Math.random() * qq.o.length) });
         } else if (st === "r4" && S.phase === "open") { const qq = CONTENT.r4.qs[S.qi]; hub.act(b.pid, false, { type: "choose", opt: Math.random() < 0.55 ? qq.a : Math.floor(Math.random() * qq.o.length) }); }
-        else if (st === "r5" && Math.random() < 0.3) hub.act(b.pid, false, { type: "pledge", text: pledges[Math.floor(Math.random() * pledges.length)] });
+        else if (st === "r5" && Math.random() < 0.5) { if (Math.random() < 0.15) hub.act(b.pid, false, { type: "pledge", text: pledges[Math.floor(Math.random() * pledges.length)] }); else hub.act(b.pid, false, { type: "pick", opt: Math.floor(Math.random() * CONTENT.r5.opts.length) }); }
         else if ((st === "qa" || st === "r5") && Math.random() < 0.08) hub.act(b.pid, false, { type: "ask", text: asks[Math.floor(Math.random() * asks.length)], anon: Math.random() < 0.4 });
         else if (st === "qa" && S.qs.length && Math.random() < 0.3) hub.act(b.pid, false, { type: "upvote", id: S.qs[Math.floor(Math.random() * S.qs.length)].id });
       });
