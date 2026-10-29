@@ -733,7 +733,7 @@ function exportCsv(S) {
     const main = root.querySelector("#main"), conn = root.querySelector("#conn"), meBox = root.querySelector("#me");
     const q = (s) => main.querySelector(s);
     main.innerHTML = '<div class="wait card"><div class="pulse"></div><p class="mute">連線中…若超過 10 秒仍沒有畫面，請確認大螢幕的主持人頁面仍開著，或重新掃描 QR code。</p></div>';
-    T.onStatus((s) => { conn.hidden = s === "ok"; });
+    T.onStatus((s, d) => { conn.hidden = s === "ok"; conn.textContent = d || "連線中斷，正在重新連線…"; });
     T.onView((v) => { V = v; offset = v.c.now - Date.now(); render(); });
     root.querySelector(".tabs").addEventListener("click", (e) => {
       const b = e.target.closest("[data-tab]"); if (!b) return; tab = b.dataset.tab; render();
@@ -1132,7 +1132,7 @@ function exportCsv(S) {
         sendRaw(pkt(0x10, cat([strB("MQTT"), Uint8Array.of(4, 2), u16(30), strB(cid)])));
       };
       ws.onmessage = (e) => { buf = cat([buf, new Uint8Array(e.data)]); parse(); };
-      ws.onclose = ws.onerror = () => { if (alive) { alive = false; h.onStatus && h.onStatus("bad"); } clearInterval(pingT); retry(); };
+      ws.onclose = ws.onerror = () => { alive = false; h.onStatus && h.onStatus("bad"); clearInterval(pingT); retry(); };
     }
     function retry() { if (closed) return; clearTimeout(retryT); retryT = setTimeout(() => { if (ws) { try { ws.onclose = ws.onerror = null; ws.close(); } catch (e) {} } connect(); }, 2000); }
     function parse() {
@@ -1182,7 +1182,7 @@ function exportCsv(S) {
       if (mq) mq.close();
       gotC = false;
       mq = Mqtt(urls[idx % urls.length], [p + "/c", p + "/me/" + pid, p + "/t"], {
-        onStatus(st) { scb(st === "ok" && gotC ? "ok" : "bad"); if (st === "ok") { mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello" } }), false); } },
+        onStatus(st) { scb(st === "ok" && gotC ? "ok" : "bad", st === "ok" ? "已連上中繼站，等待主持人畫面…（請確認主持人頁面開著，且是掃 QR code 進來）" : "無法連上中繼站，正在重試或切換備援…"); if (st === "ok") { mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello" } }), false); } },
         onMessage(topic, text, retain) {
           if (topic === p + "/t") { try { tOff = JSON.parse(text).now - Date.now(); } catch (e) {} emit(); return; }
           let o; try { o = JSON.parse(text); } catch (e) { return; }
@@ -1202,7 +1202,7 @@ function exportCsv(S) {
     };
   }
 
-  function startRelayHost(hub, code, key) {
+  function startRelayHost(hub, code, key, diag) {
     const p = roomTopic(code), urls = brokerList().slice(0, 2), known = new Set();
     const lastMe = {}; let lastC = "", dirty = true, mqs = [];
     const HOST_TYPES = ["stage", "next", "reveal", "qstatus", "reset"];
@@ -1224,7 +1224,9 @@ function exportCsv(S) {
       Object.keys(S.players).forEach((pid) => known.add(pid));
       known.forEach((pid) => { const ms = JSON.stringify(viewMe(S, pid)); if (force || lastMe[pid] !== ms) { pubAll(p + "/me/" + pid, ms); lastMe[pid] = ms; } });
     }
-    mqs = urls.map((u) => Mqtt(u, [p + "/act"], { onMessage: onMsg, onStatus(st) { if (st === "ok") { lastC = ""; Object.keys(lastMe).forEach((k) => delete lastMe[k]); dirty = true; } } }));
+    const okSet = {};
+    const report = () => { const n = Object.keys(okSet).filter((k) => okSet[k]).length; diag && diag(n > 0 ? "免伺服器模式：中繼站已連線（" + n + "/" + urls.length + "）。請保持此分頁開啟、電腦不要休眠；結束後請匯出紀錄。" : "無法連上中繼站（公用 MQTT）。請檢查這台電腦的網路／防火牆是否允許 wss 連線，系統會持續重試。", n > 0); };
+    mqs = urls.map((u) => Mqtt(u, [p + "/act"], { onMessage: onMsg, onStatus(st) { okSet[u] = st === "ok"; report(); if (st === "ok") { lastC = ""; Object.keys(lastMe).forEach((k) => delete lastMe[k]); dirty = true; } } }));
     hub.listeners.push(() => { dirty = true; });
     setInterval(() => { if (dirty) { dirty = false; flush(false); } }, 250);
     setInterval(() => { mqs.forEach((q) => q.publish(p + "/t", JSON.stringify({ now: Date.now() }), false)); }, 3000);
@@ -1261,18 +1263,27 @@ function exportCsv(S) {
       const hub = makeHub();
       try { const saved = JSON.parse(localStorage.getItem("kj_hoststate") || "null"); if (saved && saved.room === room.code && saved.S) { Object.assign(hub.S, saved.S); hub.S.ver++; } } catch (e) {}
       const aud = location.origin + location.pathname.replace(/index\.html$/, "") + "#" + room.code;
-      document.body.insertAdjacentHTML("afterbegin", '<div class="demo-banner" style="background:#0E7C7B">免伺服器模式：請保持這個分頁開啟，不要關閉或讓電腦休眠。資料經公用 MQTT 中繼站傳遞，結束後請匯出紀錄。</div>');
+      document.body.insertAdjacentHTML("afterbegin", '<div class="demo-banner" id="rb" style="background:#6C5B7B">免伺服器模式：正在連線中繼站…</div>');
       root.style.cssText = "height:100%;padding-top:26px";
       const hostEl = document.createElement("div"); hostEl.style.height = "100%"; root.appendChild(hostEl);
       mountHost(hostEl, localTransport(hub, "host-main", true, { demo: false, relay: true, info: { urls: [aud] } }));
-      startRelayHost(hub, room.code, room.key);
+      startRelayHost(hub, room.code, room.key, (txt, ok) => { const b = document.getElementById("rb"); if (b) { b.textContent = txt; b.style.background = ok ? "#0E7C7B" : "#E4572E"; } });
       const save = () => { try { localStorage.setItem("kj_hoststate", JSON.stringify({ room: room.code, S: hub.S }, (k, v) => (k[0] === "_" ? undefined : v))); } catch (e) {} };
       hub.listeners.push(() => { clearTimeout(save.t); save.t = setTimeout(save, 800); });
       return;
     }
     const code = (location.hash || "").slice(1).toLowerCase();
     if (!/^[a-z0-9]{6}$/.test(code)) {
-      root.innerHTML = '<div style="max-width:520px;margin:0 auto;padding:24px"><div class="card"><p class="kick">跨界溝通大挑戰</p><h2 style="color:#0B4F5C">請掃描大螢幕上的 QR code</h2><p class="mute">這個網址需要場次代碼。請用手機相機掃描講者螢幕上的 QR code 加入。</p></div></div>';
+      const base = location.pathname;
+      root.innerHTML = '<div style="max-width:520px;margin:0 auto;padding:24px 16px"><div class="card"><p class="kick">跨界溝通大挑戰</p><h2 style="color:#0B4F5C">歡迎，請選擇身分</h2>' +
+        '<p style="font-weight:800;margin:14px 0 6px">我是講者（主持人）</p><a class="btn block" style="text-decoration:none" href="' + base + '?host=1">開啟主持人畫面</a>' +
+        '<p class="mute" style="margin-top:6px">請用講者的電腦開啟，並投影畫面。分頁要一直開著。</p>' +
+        '<hr style="border:0;border-top:1px solid #D5E3E1;margin:18px 0">' +
+        '<p style="font-weight:800;margin:0 0 6px">我是聽眾</p><p class="mute">請直接用手機相機掃描講者螢幕上的 QR code。也可以在這裡輸入畫面上的 6 碼場次代碼：</p>' +
+        '<div style="display:flex;gap:8px"><input class="field" id="rc" maxlength="6" autocomplete="off" autocapitalize="none" placeholder="例如 a5z3z2" style="text-transform:lowercase"><button class="btn" id="rcgo" style="flex:none;white-space:nowrap">加入</button></div><p class="mute" id="rcerr" style="color:#E4572E"></p></div></div>';
+      const go = () => { const v = document.getElementById("rc").value.trim().toLowerCase(); if (/^[a-z0-9]{6}$/.test(v)) { location.hash = "#" + v; location.reload(); } else document.getElementById("rcerr").textContent = "場次代碼是 6 個英文字母或數字"; };
+      document.getElementById("rcgo").onclick = go;
+      document.getElementById("rc").addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
       return;
     }
     mountPlayer(root, relayTransport(code, newPid()));
