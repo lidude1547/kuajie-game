@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: kuajie-game
+    runtime: node
+    plan: free
+    buildCommand: "echo no build"
+    startCommand: node server.js
+    envVars:
+      - key: HOST_KEY
+        sync: false

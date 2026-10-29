@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>跨界溝通大挑戰</title>
+<style>
+:root{
+  --deep:#0B4F5C;--deep2:#093C47;--ink:#22313A;--mist:#EEF5F4;--card:#fff;--line:#D5E3E1;--mute:#5B6B73;
+  --teal:#0E7C7B;--amber:#F2A541;--coral:#E4572E;--plum:#6C5B7B;--slate:#5B6B73;--good:#1B8F5A;--bad:#C2410C;
+  --o0:#0E7C7B;--o1:#D98A12;--o2:#E4572E;--o3:#6C5B7B;--o4:#5B6B73;
+  --rt:#0E7C7B;--rp:#F2A541;--rs:#E4572E;--ro:#8A7C99;
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body,#app{height:100%;margin:0}
+body{font-family:var(--font);background:var(--mist);color:var(--ink);-webkit-text-size-adjust:100%;line-height:1.5}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.hidden{display:none!important}
+
+/* ===== 觀眾（手機） ===== */
+.pl{height:100%;display:flex;flex-direction:column;max-width:560px;margin:0 auto;background:var(--mist);position:relative}
+.pl-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);flex:none}
+.pl-brand{font-weight:800;color:var(--deep);letter-spacing:.02em;font-size:15px}
+.pl-me{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute);min-width:0}
+.pl-me b{color:var(--ink);max-width:7em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
+.chip.t{background:var(--rt)}.chip.p{background:#D98A12}.chip.s{background:var(--rs)}.chip.o{background:var(--ro)}
+.conn{background:var(--coral);color:#fff;text-align:center;padding:6px;font-size:13px;flex:none}
+.pl-main{flex:1;overflow:auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));-webkit-overflow-scrolling:touch}
+.tabs{display:flex;background:#fff;border-top:1px solid var(--line);flex:none;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;border:0;background:none;padding:12px 8px;font-size:15px;font-weight:700;color:var(--mute);border-top:3px solid transparent}
+.tabs button.on{color:var(--teal);border-top-color:var(--teal)}
+.tabs .badge{background:var(--coral);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:4px}
+.card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 1px 0 rgba(11,79,92,.06),0 6px 18px rgba(11,79,92,.06)}
+.card+.card{margin-top:12px}
+.kick{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--teal);margin:0 0 6px}
+.pl h2{font-size:20px;margin:0 0 8px;line-height:1.35;color:var(--deep);text-wrap:balance}
+.pl p{margin:0 0 8px}
+.mute{color:var(--mute);font-size:14px}
+.field{width:100%;border:2px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;background:#fff;color:var(--ink)}
+textarea.field{min-height:92px;resize:vertical}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:13px 18px;font-size:16px;font-weight:800;background:var(--teal);color:#fff;min-height:48px}
+.btn.block{width:100%}
+.btn.ghost{background:#fff;color:var(--teal);border:2px solid var(--teal)}
+.btn:disabled{opacity:.45;cursor:default}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 16px}
+.roles button{border:2px solid var(--line);background:#fff;border-radius:12px;padding:12px;font-size:16px;font-weight:700;color:var(--ink);min-height:48px}
+.roles button.on{border-color:var(--teal);background:#E3F2F1;color:var(--deep)}
+.opts{display:grid;gap:10px;margin-top:12px}
+.opt{display:flex;align-items:flex-start;gap:12px;text-align:left;border:2px solid var(--line);background:#fff;border-radius:14px;padding:12px;font-size:16px;color:var(--ink);min-height:56px;line-height:1.45;width:100%}
+.opt .ltr{flex:none;width:32px;height:32px;border-radius:10px;color:#fff;font-weight:800;display:grid;place-items:center}
+.opt:nth-child(1) .ltr{background:var(--o0)}.opt:nth-child(2) .ltr{background:var(--o1)}.opt:nth-child(3) .ltr{background:var(--o2)}.opt:nth-child(4) .ltr{background:var(--o3)}.opt:nth-child(5) .ltr{background:var(--o4)}
+.opt.sel{border-color:var(--teal);background:#E3F2F1}
+.opt.ok{border-color:var(--good);background:#E4F5EC}
+.opt.no{border-color:#E7A28A;background:#FDF0EB}
+.opt.dim{opacity:.55}
+.opt[disabled]{cursor:default}
+.timer{height:10px;border-radius:99px;background:#dbe6e4;overflow:hidden;margin:4px 0 12px}
+.timer i{display:block;height:100%;width:100%;background:var(--teal);transition:width .25s linear,background .3s}
+.timer.low i{background:var(--coral)}
+.fb{margin-top:14px;padding:14px;border-radius:14px;background:#fff;border-left:6px solid var(--teal)}
+.fb.good{border-color:var(--good)}.fb.bad{border-color:var(--coral)}
+.fb b{display:block;font-size:17px;margin-bottom:4px}
+.board{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.board li{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:10px 12px}
+.board .no{flex:none;width:28px;height:28px;border-radius:50%;background:var(--mist);display:grid;place-items:center;font-weight:800;font-size:14px;color:var(--deep)}
+.board li:nth-child(1) .no{background:var(--amber);color:#3a2a00}
+.board .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.board .sc{font-weight:800;color:var(--teal)}
+.stack{display:grid;gap:10px;margin-top:10px}
+.srow .lab{font-size:14px;margin-bottom:3px}
+.track{display:flex;height:22px;border-radius:8px;overflow:hidden;background:#e6eeed}
+.track span{height:100%;width:0;transition:width .5s ease}
+.track .t{background:var(--rt)}.track .p{background:var(--rp)}.track .s{background:var(--rs)}.track .o{background:var(--ro)}
+.srow .val{font-size:13px;color:var(--mute);margin-top:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--mute);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.qitem{background:#fff;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:flex-start}
+.qitem+.qitem{margin-top:10px}
+.qitem .tx{flex:1;min-width:0;overflow-wrap:anywhere}
+.qitem .by{font-size:12px;color:var(--mute);margin-top:2px}
+.up{flex:none;border:2px solid var(--line);background:#fff;border-radius:12px;min-width:56px;padding:6px 8px;font-weight:800;color:var(--mute);display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.up.on{border-color:var(--teal);color:var(--teal);background:#E3F2F1}
+.tag{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:1px 7px;background:var(--good);color:#fff;margin-right:6px}
+.wallcard{background:#fff;border-radius:12px;padding:10px 12px;border-left:5px solid var(--teal);overflow-wrap:anywhere}
+.wallcard+.wallcard{margin-top:8px}
+.wallcard.p{border-color:var(--rp)}.wallcard.s{border-color:var(--rs)}.wallcard.o{border-color:var(--ro)}
+.wallcard small{display:block;color:var(--mute);margin-top:2px}
+.wait{text-align:center;padding:28px 12px}
+.pulse{width:14px;height:14px;border-radius:50%;background:var(--teal);margin:0 auto 14px;animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(14,124,123,.5)}100%{box-shadow:0 0 0 16px rgba(14,124,123,0)}}
+.row{display:flex;gap:10px;align-items:center}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mute);margin:8px 0 12px}
+.check input{width:20px;height:20px}
+
+/* ===== 主持人（投影） ===== */
+.host{height:100%;display:flex;flex-direction:column;background:radial-gradient(1200px 700px at 85% -10%,#12707a 0,transparent 60%),var(--deep);color:#fff;font-size:clamp(14px,1.25vw,22px)}
+.h-top{display:flex;align-items:center;gap:20px;padding:12px 2.2vw;flex:none;background:rgba(0,0,0,.18)}
+.h-brand{font-weight:800;font-size:1.25em;white-space:nowrap}
+.h-brand small{display:block;font-size:.62em;color:#8CC5C0;font-weight:600;letter-spacing:.08em}
+.steps{display:flex;gap:6px;flex:1;justify-content:center;flex-wrap:wrap}
+.steps button{border:1px solid rgba(255,255,255,.25);background:transparent;color:#cfe6e4;padding:5px 12px;border-radius:999px;font-size:.85em;font-weight:700}
+.steps button.on{background:var(--amber);border-color:var(--amber);color:#2b1d00}
+.steps button.past{background:rgba(255,255,255,.12)}
+.h-stat{display:flex;align-items:center;gap:14px;white-space:nowrap}
+.h-stat b{font-size:1.5em}
+.h-q{background:var(--coral);border-radius:999px;padding:2px 12px;font-weight:800;font-size:.85em}
+.h-main{flex:1;min-height:0;padding:1.6vh 2.6vw;display:flex;flex-direction:column;gap:1.4vh;overflow-y:auto;scrollbar-width:none}.h-main::-webkit-scrollbar{display:none}
+.h-bar{display:flex;align-items:center;gap:12px;padding:10px 2.2vw;background:rgba(0,0,0,.28);flex:none}
+.h-bar .hint{flex:1;font-size:.8em;color:#9dc7c4}
+.hbtn{border:0;border-radius:12px;padding:.7em 1.4em;font-size:1em;font-weight:800;background:var(--amber);color:#2b1d00}
+.hbtn.sec{background:rgba(255,255,255,.14);color:#fff;font-weight:700}
+.hbtn.danger{background:rgba(228,87,46,.25);color:#ffd9cc}
+.hbtn:disabled{opacity:.4}
+.h-kick{color:var(--amber);font-weight:800;letter-spacing:.14em;font-size:.8em}
+.h-title{font-size:clamp(22px,2.9vw,52px);font-weight:800;line-height:1.28;margin:.1em 0 0;text-wrap:balance}
+.h-sub{color:#b9dcd9;font-size:1em}
+.lobby{display:grid;grid-template-columns:minmax(300px,32vw) 1fr;gap:3vw;align-items:center;flex:1;min-height:0}
+.qrcard{background:#fff;border-radius:24px;padding:18px;color:var(--ink);text-align:center}
+.qrcard svg{width:100%;height:auto;display:block}
+.qrcard .url{font-weight:800;font-size:clamp(14px,1.5vw,26px);word-break:break-all;margin-top:8px}
+.qrcard .demo{color:var(--coral);font-weight:800;font-size:.8em}
+.qrcard button{margin-top:6px;border:0;background:none;color:var(--teal);font-weight:700;text-decoration:underline;font-size:.8em}
+.bigcount{font-size:clamp(40px,6vw,110px);font-weight:900;line-height:1}
+.bigcount small{font-size:.28em;font-weight:700;color:#b9dcd9;margin-left:.3em}
+.rolechips{display:flex;gap:10px;flex-wrap:wrap;margin:1.2vh 0}
+.rolechips .chip{font-size:1em;padding:4px 14px}
+.cloud{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start;margin-top:1vh;max-height:34vh;overflow:hidden}
+.cloud span{background:rgba(255,255,255,.14);border-radius:999px;padding:.25em .9em;font-weight:700;animation:pop .4s both}
+.cloud span:nth-child(3n){background:rgba(242,165,65,.3)}.cloud span:nth-child(3n+1){background:rgba(140,197,192,.25)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.hopts{display:grid;grid-template-columns:1fr 1fr;gap:1.4vh 1.4vw;margin-top:1vh}
+.hopts.one{grid-template-columns:1fr}
+.hopt{display:flex;gap:1vw;align-items:flex-start;background:rgba(255,255,255,.1);border:3px solid transparent;border-radius:18px;padding:1.4vh 1.2vw;font-size:clamp(16px,1.8vw,32px);font-weight:700;line-height:1.35}
+.hopt .ltr{flex:none;width:1.7em;height:1.7em;border-radius:.5em;display:grid;place-items:center;font-weight:900;color:#fff}
+.hopt:nth-child(1) .ltr{background:var(--o0)}.hopt:nth-child(2) .ltr{background:var(--o1)}.hopt:nth-child(3) .ltr{background:var(--o2)}.hopt:nth-child(4) .ltr{background:var(--o3)}.hopt:nth-child(5) .ltr{background:var(--o4)}
+.hopt .tx{flex:1;min-width:0}
+.hopt .cnt{flex:none;font-size:.8em;color:#b9dcd9;font-weight:800;align-self:center}
+.hopt.ok{background:rgba(27,143,90,.35);border-color:#4fd69a}
+.hopt.dim{opacity:.45}
+.hopt.best::after{content:"較建議";flex:none;align-self:center;background:#4fd69a;color:#05301f;border-radius:8px;padding:.1em .6em;font-size:.6em;font-weight:900}
+.htimer{height:1.2vh;min-height:8px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
+.htimer i{display:block;height:100%;width:100%;background:var(--amber);transition:width .25s linear}
+.htimer.low i{background:var(--coral)}
+.tnum{font-weight:900;font-size:clamp(28px,3.6vw,64px);min-width:2.2em;text-align:right}
+.hrow{display:flex;align-items:center;gap:20px}
+.hans{font-size:1em;color:#b9dcd9;font-weight:700}
+.expl{background:rgba(255,255,255,.12);border-radius:18px;padding:1.4vh 1.4vw;font-size:clamp(15px,1.55vw,28px);line-height:1.5}
+.expl b{color:var(--amber)}
+.hstack{display:grid;gap:1.4vh;flex:1;align-content:center}.hstack .srow{display:grid;grid-template-columns:1fr auto;align-items:end;column-gap:1vw}.hstack .srow .track{grid-column:1/3;grid-row:2}.hstack .srow .val{grid-row:1;grid-column:2;margin:0}.hstack .srow .lab{grid-row:1;grid-column:1}
+.hstack .srow .lab{font-size:clamp(16px,1.9vw,34px);margin-bottom:.3vh;font-weight:700}
+.hstack .track{height:clamp(22px,3.6vh,44px);background:rgba(255,255,255,.14);border-radius:12px}
+.hstack .val{font-size:clamp(14px,1.4vw,24px);color:#b9dcd9;font-weight:700;margin-top:.2vh}
+.hlegend{display:flex;gap:18px;flex-wrap:wrap;color:#b9dcd9;font-size:.85em}
+.hlegend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:6px;vertical-align:-1px}
+.hboard{display:grid;gap:.9vh;flex:1;align-content:start}
+.hboard .it{display:grid;grid-template-columns:2.4em 1fr 4.5em;align-items:center;gap:1vw;background:rgba(255,255,255,.1);border-radius:14px;padding:.5vh 1vw;font-size:clamp(15px,1.7vw,30px);font-weight:700;overflow:hidden;position:relative}
+.hboard .it .bar{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(242,165,65,.35),rgba(242,165,65,.05));z-index:0;transition:width .6s}
+.hboard .it>*{position:relative;z-index:1}
+.hboard .no{font-weight:900;color:var(--amber)}
+.hboard .sc{text-align:right;font-weight:900}
+.wall{columns:3 260px;column-gap:1.2vw;flex:1;overflow:hidden}
+.wall .wc{break-inside:avoid;background:rgba(255,255,255,.12);border-radius:16px;padding:1.2vh 1vw;margin-bottom:1.2vh;font-size:clamp(15px,1.6vw,28px);font-weight:600;border-left:8px solid var(--rt);animation:pop .4s both}
+.wall .wc.p{border-color:var(--rp)}.wall .wc.s{border-color:var(--rs)}.wall .wc.o{border-color:var(--ro)}
+.wall .wc small{display:block;color:#b9dcd9;font-weight:600;font-size:.7em;margin-top:.3em}
+.hq{display:grid;gap:1vh;flex:1;align-content:start;overflow:auto}
+.hq .qi{display:grid;grid-template-columns:4.2em 1fr auto;gap:1.2vw;align-items:center;background:rgba(255,255,255,.1);border-radius:16px;padding:1.1vh 1.2vw;font-size:clamp(16px,1.8vw,32px);font-weight:600}
+.hq .qi.answered{opacity:.5}.hq .qi.hidden{opacity:.35;outline:2px dashed rgba(255,255,255,.4)}
+.hq .vt{background:var(--amber);color:#2b1d00;border-radius:12px;font-weight:900;text-align:center;padding:.2em 0}
+.hq small{display:block;color:#b9dcd9;font-size:.6em;font-weight:600}
+.hq .ops{display:flex;gap:6px}
+.hq .ops button{border:0;border-radius:8px;padding:.3em .8em;font-size:.6em;font-weight:800;background:rgba(255,255,255,.18);color:#fff}
+.endstats{display:flex;gap:2vw;flex-wrap:wrap}
+.endstats div{background:rgba(255,255,255,.12);border-radius:18px;padding:1.4vh 2vw;text-align:center}
+.endstats b{display:block;font-size:clamp(30px,4vw,70px);color:var(--amber)}
+.demo-banner{position:fixed;left:0;right:0;top:0;background:var(--coral);color:#fff;text-align:center;font-weight:700;padding:4px 8px;font-size:13px;z-index:50}
+.demo-tools{position:fixed;left:14px;bottom:70px;z-index:40;display:flex;gap:8px}
+.phone{position:fixed;right:10px;bottom:56px;width:330px;height:600px;transform:scale(.72);border:10px solid #0b1f26;border-radius:34px;overflow:hidden;z-index:40;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff;transform-origin:bottom right}
+.phone.min{height:48px;width:200px}
+.phone .pl{height:100%}
+.phone-bar{position:absolute;top:0;left:0;right:0;height:0}
+.phone-toggle{position:fixed;right:20px;bottom:64px;z-index:41}
+@media (max-width:900px){.lobby{grid-template-columns:1fr}.hopts{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.hopt .tx .track.mini{height:12px;margin-top:.5vh;background:rgba(255,255,255,.14)}.hopt .tx .val{font-size:.6em;color:#b9dcd9;font-weight:700;margin-top:.1vh}.hopt .tx .mini.off,.hopt .tx .mini.off+.val{display:none}
+.hopts.one .hopt{font-size:clamp(15px,1.55vw,28px);padding:1vh 1.2vw}
+
+.qrcard .pub{display:flex;gap:6px;margin-top:8px}.qrcard .pub input{flex:1;min-width:0;border:2px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:.7em}.qrcard .pub button{margin:0;border:0;background:var(--teal);color:#fff;border-radius:8px;padding:6px 12px;text-decoration:none;font-weight:800;font-size:.7em}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<noscript>請開啟 JavaScript 以使用本頁。</noscript>
+<script>
+/* Minimal QR Code encoder: byte mode, error correction level M, versions 1-10. */
+const QR = (function () {
+  const ECC_PER_BLOCK = [0, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26];
+  const NUM_BLOCKS = [0, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5];
+  function rawModules(v) {
+    let r = (16 * v + 128) * v + 64;
+    if (v >= 2) { const a = Math.floor(v / 7) + 2; r -= (25 * a - 10) * a - 55; if (v >= 7) r -= 36; }
+    return r;
+  }
+  function alignPos(v) {
+    if (v === 1) return [];
+    const n = Math.floor(v / 7) + 2, size = v * 4 + 17;
+    const step = Math.ceil((v * 4 + 4) / (n * 2 - 2)) * 2;
+    const res = [6];
+    for (let p = size - 7; res.length < n; p -= step) res.splice(1, 0, p);
+    return res;
+  }
+  function gfMul(x, y) { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11d); z ^= ((y >>> i) & 1) * x; } return z; }
+  function rsDivisor(deg) {
+    const r = new Array(deg).fill(0); r[deg - 1] = 1; let root = 1;
+    for (let i = 0; i < deg; i++) { for (let j = 0; j < deg; j++) { r[j] = gfMul(r[j], root); if (j + 1 < deg) r[j] ^= r[j + 1]; } root = gfMul(root, 2); }
+    return r;
+  }
+  function rsRemainder(data, div) {
+    const r = new Array(div.length).fill(0);
+    for (const b of data) { const f = b ^ r.shift(); r.push(0); div.forEach((c, i) => { r[i] ^= gfMul(c, f); }); }
+    return r;
+  }
+  function utf8(str) { return Array.from(new TextEncoder().encode(str)); }
+  function encode(text) {
+    const bytes = utf8(text);
+    let ver = 1;
+    for (; ver <= 10; ver++) {
+      const cap = Math.floor(rawModules(ver) / 8) - ECC_PER_BLOCK[ver] * NUM_BLOCKS[ver];
+      if (4 + 8 + bytes.length * 8 <= cap * 8) break;
+    }
+    if (ver > 10) throw new Error("text too long for QR");
+    const size = ver * 4 + 17;
+    const dataCap = Math.floor(rawModules(ver) / 8) - ECC_PER_BLOCK[ver] * NUM_BLOCKS[ver];
+    const bits = [];
+    const put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+    put(4, 4); put(bytes.length, ver >= 10 ? 16 : 8); bytes.forEach((b) => put(b, 8));
+    put(0, Math.min(4, dataCap * 8 - bits.length));
+    put(0, (8 - (bits.length % 8)) % 8);
+    for (let pad = 0xec; bits.length < dataCap * 8; pad ^= 0xec ^ 0x11) put(pad, 8);
+    const data = [];
+    for (let i = 0; i < bits.length; i += 8) { let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; data.push(b); }
+    // blocks + ecc
+    const nb = NUM_BLOCKS[ver], eccLen = ECC_PER_BLOCK[ver], raw = Math.floor(rawModules(ver) / 8);
+    const nShort = nb - (raw % nb), shortLen = Math.floor(raw / nb);
+    const blocks = [], div = rsDivisor(eccLen);
+    for (let i = 0, k = 0; i < nb; i++) {
+      const len = shortLen - eccLen + (i < nShort ? 0 : 1);
+      const dat = data.slice(k, k + len); k += len;
+      const ecc = rsRemainder(dat, div);
+      if (i < nShort) dat.push(0);
+      blocks.push(dat.concat(ecc));
+    }
+    const all = [];
+    for (let i = 0; i < blocks[0].length; i++) blocks.forEach((blk, j) => { if (i !== shortLen - eccLen || j >= nShort) all.push(blk[i]); });
+    // matrix
+    const mod = Array.from({ length: size }, () => new Array(size).fill(false));
+    const fn = Array.from({ length: size }, () => new Array(size).fill(false));
+    const setF = (x, y, d) => { mod[y][x] = d; fn[y][x] = true; };
+    for (let i = 0; i < size; i++) { setF(6, i, i % 2 === 0); setF(i, 6, i % 2 === 0); }
+    const finder = (cx, cy) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy; if (x >= 0 && x < size && y >= 0 && y < size) setF(x, y, d !== 2 && d !== 4); } };
+    finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+    const ap = alignPos(ver);
+    ap.forEach((px, i) => ap.forEach((py, j) => {
+      if ((i === 0 && j === 0) || (i === 0 && j === ap.length - 1) || (i === ap.length - 1 && j === 0)) return;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setF(px + dx, py + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }));
+    const fmt = (mask) => {
+      const d = (0 << 3) | mask; let rem = d;
+      for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+      const b = ((d << 10) | rem) ^ 0x5412, g = (i) => ((b >>> i) & 1) !== 0;
+      for (let i = 0; i <= 5; i++) setF(8, i, g(i));
+      setF(8, 7, g(6)); setF(8, 8, g(7)); setF(7, 8, g(8));
+      for (let i = 9; i < 15; i++) setF(14 - i, 8, g(i));
+      for (let i = 0; i < 8; i++) setF(size - 1 - i, 8, g(i));
+      for (let i = 8; i < 15; i++) setF(8, size - 15 + i, g(i));
+      setF(8, size - 8, true);
+    };
+    fmt(0);
+    if (ver >= 7) {
+      let rem = ver; for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1f25);
+      const b = (ver << 12) | rem;
+      for (let i = 0; i < 18; i++) { const bit = ((b >>> i) & 1) !== 0, a = size - 11 + (i % 3), c = Math.floor(i / 3); setF(a, c, bit); setF(c, a, bit); }
+    }
+    // codewords
+    let bi = 0;
+    for (let right = size - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+        const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - vert : vert;
+        if (!fn[y][x] && bi < all.length * 8) { mod[y][x] = ((all[bi >>> 3] >>> (7 - (bi & 7))) & 1) !== 0; bi++; }
+      }
+    }
+    const MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x, y) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+      (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => ((x * y) % 2) + ((x * y) % 3) === 0,
+      (x, y) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0, (x, y) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0];
+    const applyMask = (m) => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!fn[y][x] && MASKS[m](x, y)) mod[y][x] = !mod[y][x]; };
+    const penalty = () => {
+      let p = 0;
+      const line = (get) => {
+        let run = 1;
+        for (let i = 1; i < size; i++) { if (get(i) === get(i - 1)) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; }
+        const s = []; for (let i = 0; i < size; i++) s.push(get(i) ? 1 : 0);
+        const str = s.join("");
+        for (const pat of ["10111010000", "00001011101"]) { let k = -1; while ((k = str.indexOf(pat, k + 1)) >= 0) p += 40; }
+      };
+      for (let y = 0; y < size; y++) line((i) => mod[y][i]);
+      for (let x = 0; x < size; x++) line((i) => mod[i][x]);
+      for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) { const c = mod[y][x]; if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) p += 3; }
+      let dark = 0; mod.forEach((r) => r.forEach((c) => { if (c) dark++; }));
+      p += Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10 ;
+      return p;
+    };
+    let best = 0, bestP = Infinity;
+    for (let m = 0; m < 8; m++) { applyMask(m); fmt(m); const p = penalty(); if (p < bestP) { bestP = p; best = m; } applyMask(m); }
+    applyMask(best); fmt(best);
+    return mod;
+  }
+  function svg(text, opt) {
+    opt = opt || {};
+    const m = encode(text), n = m.length, q = opt.margin == null ? 2 : opt.margin, t = n + q * 2;
+    let d = "";
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) d += "M" + (x + q) + " " + (y + q) + "h1v1h-1z";
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + t + " " + t + '" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="' + t + '" height="' + t + '" fill="#fff"/><path d="' + d + '" fill="#0B1F26"/></svg>';
+  }
+  return { encode, svg };
+})();
+
+</script>
+<script>
+/*ENGINE_START*/
+/* ---------- 跨界溝通大挑戰：內容與遊戲引擎（純邏輯，伺服器與瀏覽器共用） ---------- */
+const ROLES = [
+  { k: "t", n: "老師", c: "#0E7C7B" },
+  { k: "p", n: "家長", c: "#F2A541" },
+  { k: "s", n: "專業人員", c: "#E4572E" },
+  { k: "o", n: "其他", c: "#6C5B7B" },
+];
+const STAGES = [
+  { id: "lobby", short: "入場", name: "入場與暖身" },
+  { id: "r1", short: "R1", name: "現場溫度計" },
+  { id: "r2", short: "R2", name: "翻譯機搶答" },
+  { id: "r3", short: "R3", name: "嵌入大挑戰" },
+  { id: "r4", short: "R4", name: "溝通小劇場" },
+  { id: "r5", short: "R5", name: "行動承諾牆" },
+  { id: "qa", short: "Q&A", name: "提問牆" },
+  { id: "end", short: "結束", name: "謝謝大家" },
+];
+const CONTENT = {
+  r1: {
+    q: "哪一段關係，最難「說得通」？",
+    hint: "單選，講者揭曉後會看到三種身分各自的分布。",
+    opts: ["老師 ↔ 家長", "老師 ↔ 專業人員", "家長 ↔ 專業人員", "導師 ↔ 助理員", "園所行政 ↔ 第一線"],
+  },
+  r2: {
+    limit: 20,
+    intro: "專業說法 → 教室看得到的行為。選出最像「錄影機拍得到」的描述。",
+    qs: [
+      { t: "治療師報告：「感覺調節困難」。下列哪一句最像老師在教室裡「看得到」的描述？",
+        o: ["他的感覺系統有問題", "他很敏感，需要特別照顧", "排隊被碰到會大叫並離開隊伍；點心時不願碰黏黏的材料", "他需要做感覺統合治療"], a: 2,
+        x: "好的翻譯要說出「誰、在哪、做了什麼」。其他選項是推論、評價或處置建議，無法被錄影看見，也容易讓家長覺得被貼標籤。" },
+      { t: "報告寫著：「注意力不足」。哪一句是教室可觀察的描述？",
+        o: ["他上課都不專心", "他有過動的傾向", "他很容易分心，我帶得很累", "團體討論約半分鐘後離座；操作喜歡的積木能坐 10 分鐘以上"], a: 3,
+        x: "同一個孩子在不同情境差很多，這正是重要訊息。具體寫出情境與時間，才能討論「怎麼調整」而不是「他怎麼了」。" },
+      { t: "報告寫著：「語言表達遲緩」。哪一句最適合對家長描述孩子在班上的樣子？",
+        o: ["想要東西時會拉大人的手或哭，還不會說「我要」", "他的口語發展落後同齡孩子", "他不太會講話", "在家可能沒有多跟他說話"], a: 0,
+        x: "先說孩子「用什麼方式表達」，再討論可以教的替代方式（例如手勢、圖卡）。第四個選項暗示責怪家長，應避免。" },
+      { t: "報告寫著：「社交互動弱」。哪一句比較貼近行為描述？",
+        o: ["他沒有朋友", "他不喜歡跟人玩", "會待在同儕旁邊玩，但不輪流，也較少回應同學的邀請", "他的社交技巧需要加強"], a: 2,
+        x: "「沒有朋友」「不喜歡人」是結論；真正可教的是「輪流」與「回應邀請」，這些才能放進 IEP 與一日作息。" },
+      { t: "報告寫著：「情緒調節困難」。哪一句描述最完整、可以直接討論策略？",
+        o: ["他情緒很大", "換活動時會尖叫、趴在地上；事先預告「再五分鐘」時較少發生", "他需要行為治療", "他是被寵壞的"], a: 1,
+        x: "描述包含「什麼時候發生、什麼時候比較少」，就能直接得到支持策略（預告、視覺時間表）。其他選項是評價或標籤。" },
+    ],
+  },
+  r3: {
+    limit: 25,
+    intro: "IEP 目標 → 最適合「嵌入」的作息時機。目標放進本來就要做的活動，不另外加課。",
+    qs: [
+      { t: "目標：用手勢或圖卡「表達想要的東西」。最自然的練習時機是？",
+        o: ["團體討論時間", "午休時間", "點心時間（要吃什麼、要多一點）", "離園整隊"], a: 2,
+        x: "點心時間孩子有真實的需求與動機，說出「我要」有立即的回饋，比單純的練習更容易類化。" },
+      { t: "目標：學習「輪流與等待」。最適合嵌入哪裡？",
+        o: ["個別評量時間", "學習區使用熱門教具、戶外排隊溜滑梯", "午睡時間", "教室清潔時間"], a: 1,
+        x: "輪流需要「有同伴與有想要的東西」。熱門教具與溜滑梯天然就有等待，不必額外設計。" },
+      { t: "目標：完成「兩步驟指令」。最適合嵌入哪裡？",
+        o: ["收拾時間：「把積木放進籃子，再去洗手」", "聽故事時間", "自由探索時間", "晨間問候"], a: 0,
+        x: "收拾與盥洗是每天重複、有明確結果的兩步驟活動，重複次數多、情境自然。" },
+      { t: "目標：「與同儕共玩」。下列哪一種安排最有機會達成？",
+        o: ["抽離到另一間教室一對一練習", "看繪本團體討論", "午睡前安靜活動", "有簡單規則的小組桌遊或合作遊戲"], a: 3,
+        x: "共玩需要同儕在場，且遊戲規則可降低互動負擔。抽離教學難以練習與同儕的互動。" },
+    ],
+  },
+  r4: {
+    intro: "沒有唯一標準答案，但有些回應更能「維持合作」。選一個你最想用的說法。",
+    qs: [
+      { who: "老師 ⇄ 家長", t: "開學兩個月，小宇幾乎不開口、也不跟同學玩。媽媽說：「他只是慢熟，男生都比較晚。」老師最適合怎麼回應？",
+        o: ["「我們班很多男生都很活潑，他確實比較安靜。」", "「我先分享這兩個月看到的：團討時他幾乎沒開口，點心時會用手指要東西。您在家看到的是什麼？」", "「建議您帶他去做評估，這樣比較保險。」", "「好的，那我們再觀察看看。」"], a: 1,
+        x: "先「描述」看到的事實（不加評價），再「邀請」家長分享在家的樣子。這樣不否定家長的觀點，也為之後談轉介鋪路。" },
+      { who: "專業人員 ⇄ 老師", t: "治療師建議每天在教室做 20 分鐘訓練。老師說：「班上有 25 個孩子，我沒時間。」治療師最適合怎麼回應？",
+        o: ["「這是處方，需要每天做。」", "「那請家長在家補做。」", "「我跟園長反映老師不配合。」", "「那我把目標拆小，看看點心和戶外哪幾個時刻可以順便練習，您覺得哪個最可行？」"], a: 3,
+        x: "把建議改成「嵌入式」版本，並邀請老師決定可行的時機。治療建議要變成教室做得到的版本，才會真的被執行。" },
+      { who: "導師 ⇄ 助理員", t: "助理員習慣直接幫孩子貼完作品，導師希望孩子自己做。導師最適合怎麼處理？",
+        o: ["當場說：「你不要幫他做！」", "向特教老師反映助理員不照規矩", "事後私下說：「我看到作品是你幫忙貼完的。我猜你是想讓他有成就感。IEP 這學期想練『自己貼』，我們約定哪一步由你協助好嗎？」", "默默自己接手，不再讓助理員參與"], a: 2,
+        x: "私下、先描述、說出善意的猜測，再回到 IEP 的共同目標並邀請約定。避免在孩子面前糾正，也避免把問題丟給第三人。" },
+    ],
+  },
+  pledgeHint: "本週，我會……（例如：用「描述—理解—邀請」聯絡一位家長）",
+  warmHint: "用一個詞形容你現在的心情",
+};
+
+/* ---------------- 引擎 ---------------- */
+const STAGE_IDS = STAGES.map((s) => s.id);
+const roleKeys = ROLES.map((r) => r.k);
+function createState() {
+  return {
+    ver: 1, stage: "lobby", qi: -1, phase: "open", deadline: 0,
+    players: {}, warm: {}, r1: {}, ans: {}, r4: {}, revealed: {}, pledges: [], qs: [], seq: 1, created: Date.now(),
+  };
+}
+function clean(t, max) { return String(t == null ? "" : t).replace(/[\u0000-\u001f\u007f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, max); }
+function isQuiz(st) { return st === "r2" || st === "r3"; }
+function items(S) { return S.stage === "r2" ? CONTENT.r2.qs : S.stage === "r3" ? CONTENT.r3.qs : S.stage === "r4" ? CONTENT.r4.qs : null; }
+function keyOf(S) { return S.stage + ":" + S.qi; }
+function bump(S) { S.ver++; }
+
+function reveal(S, now) {
+  if (S.phase !== "open") return false;
+  if (S.stage === "r1") { S.phase = "revealed"; return true; }
+  if (S.qi < 0 || !items(S)) return false;
+  S.phase = "revealed"; S.revealed[keyOf(S)] = true; return true;
+}
+
+function reduce(S, a, now, isHost) {
+  now = now || Date.now();
+  const P = S.players;
+  const t = a && a.type;
+  if (!t) return { err: "bad" };
+  // ---- 主持人動作 ----
+  if (["stage", "next", "reveal", "qstatus", "reset", "setstage_next"].includes(t)) {
+    if (!isHost) return { err: "forbidden" };
+    if (t === "reset") { const n = createState(); n.ver = S.ver + 1; Object.keys(S).forEach((k) => delete S[k]); Object.assign(S, n); return { ok: 1 }; }
+    if (t === "stage") {
+      if (!STAGE_IDS.includes(a.stage)) return { err: "bad stage" };
+      S.stage = a.stage; S.qi = -1; S.deadline = 0;
+      S.phase = isQuiz(a.stage) || a.stage === "r4" ? "idle" : "open";
+      bump(S); return { ok: 1 };
+    }
+    if (t === "setstage_next") {
+      const i = STAGE_IDS.indexOf(S.stage);
+      return reduce(S, { type: "stage", stage: STAGE_IDS[Math.min(i + 1, STAGE_IDS.length - 1)] }, now, true);
+    }
+    if (t === "reveal") { const r = reveal(S, now); if (r) bump(S); return { ok: 1 }; }
+    if (t === "next") {
+      const list = items(S);
+      if (!list) return { err: "n/a" };
+      if (S.phase === "open") return { err: "reveal first" };
+      if (S.phase === "done") return { ok: 1 };
+      if (S.qi + 1 < list.length) {
+        S.qi++; S.phase = "open";
+        S.deadline = isQuiz(S.stage) ? now + CONTENT[S.stage].limit * 1000 : 0;
+      } else { S.phase = "done"; S.deadline = 0; }
+      bump(S); return { ok: 1 };
+    }
+    if (t === "qstatus") {
+      const q = S.qs.find((x) => x.id === a.id);
+      if (!q || !["open", "answered", "hidden"].includes(a.status)) return { err: "bad" };
+      q.status = a.status; bump(S); return { ok: 1 };
+    }
+  }
+  // ---- 觀眾動作 ----
+  const pid = clean(a.pid, 40);
+  if (pid.length < 6) return { err: "bad pid" };
+  if (t === "join") {
+    const name = clean(a.name, 12), role = roleKeys.includes(a.role) ? a.role : "o";
+    if (!name) return { err: "name" };
+    if (!P[pid]) { if (Object.keys(P).length >= 3000) return { err: "full" }; P[pid] = { name, role, at: now }; }
+    else { P[pid].name = name; P[pid].role = role; }
+    bump(S); return { ok: 1 };
+  }
+  const me = P[pid];
+  if (!me) return { err: "join first" };
+  const num = (v, max) => { const n = parseInt(v, 10); return n >= 0 && n < max ? n : -1; };
+  switch (t) {
+    case "warm": {
+      if (S.stage !== "lobby") return { err: "closed" };
+      const w = clean(a.text, 12); if (!w) return { err: "empty" };
+      S.warm[pid] = w; bump(S); return { ok: 1 };
+    }
+    case "vote": {
+      if (S.stage !== "r1" || S.phase !== "open") return { err: "closed" };
+      const o = num(a.opt, CONTENT.r1.opts.length); if (o < 0) return { err: "bad" };
+      S.r1[pid] = o; bump(S); return { ok: 1 };
+    }
+    case "answer": {
+      if (!isQuiz(S.stage) || S.phase !== "open" || S.qi < 0) return { err: "closed" };
+      if (S.deadline && now > S.deadline + 1500) return { err: "late" };
+      const q = items(S)[S.qi], o = num(a.opt, q.o.length); if (o < 0) return { err: "bad" };
+      const k = keyOf(S); S.ans[k] = S.ans[k] || {};
+      if (S.ans[k][pid]) return { err: "done" };
+      const limit = CONTENT[S.stage].limit * 1000;
+      const left = Math.max(0, Math.min(limit, S.deadline - now));
+      S.ans[k][pid] = { o, p: o === q.a ? Math.round(500 + (500 * left) / limit) : 0 };
+      bump(S); return { ok: 1 };
+    }
+    case "choose": {
+      if (S.stage !== "r4" || S.phase !== "open" || S.qi < 0) return { err: "closed" };
+      const q = items(S)[S.qi], o = num(a.opt, q.o.length); if (o < 0) return { err: "bad" };
+      const k = keyOf(S); S.r4[k] = S.r4[k] || {}; S.r4[k][pid] = o; bump(S); return { ok: 1 };
+    }
+    case "pledge": {
+      if (S.stage !== "r5") return { err: "closed" };
+      const x = clean(a.text, 80); if (!x) return { err: "empty" };
+      if (S.pledges.filter((p) => p.pid === pid).length >= 3) return { err: "limit" };
+      S.pledges.push({ id: S.seq++, pid, text: x, at: now }); bump(S); return { ok: 1 };
+    }
+    case "ask": {
+      const x = clean(a.text, 140); if (!x) return { err: "empty" };
+      if (S.qs.filter((q) => q.pid === pid).length >= 6) return { err: "limit" };
+      S.qs.push({ id: S.seq++, pid, text: x, anon: !!a.anon, votes: [], status: "open", at: now }); bump(S); return { ok: 1 };
+    }
+    case "upvote": {
+      const q = S.qs.find((x) => x.id === a.id);
+      if (!q || q.status === "hidden") return { err: "bad" };
+      const i = q.votes.indexOf(pid); if (i >= 0) q.votes.splice(i, 1); else q.votes.push(pid);
+      bump(S); return { ok: 1 };
+    }
+  }
+  return { err: "unknown" };
+}
+
+function tick(S, now) {
+  if (S.phase === "open" && S.deadline && now > S.deadline + 400 && isQuiz(S.stage)) { if (reveal(S, now)) { bump(S); return true; } }
+  return false;
+}
+
+/* ---------------- 檢視（要送給畫面的資料） ---------------- */
+function board(S) {
+  if (S._bv === S.ver && S._b) return S._b;
+  const tot = {};
+  for (const k of Object.keys(S.revealed)) {
+    if (!isQuiz(k.split(":")[0])) continue;
+    const m = S.ans[k] || {};
+    for (const pid of Object.keys(m)) tot[pid] = (tot[pid] || 0) + m[pid].p;
+  }
+  const list = Object.keys(S.players).map((pid) => ({ pid, name: S.players[pid].name, role: S.players[pid].role, score: tot[pid] || 0 }));
+  list.sort((a, b) => b.score - a.score || (S.players[a.pid].at - S.players[b.pid].at));
+  const rank = {}; list.forEach((p, i) => { rank[p.pid] = i + 1; });
+  const anyRevealed = Object.keys(S.revealed).some((k) => isQuiz(k.split(":")[0]));
+  S._b = { list, rank, tot, anyRevealed }; S._bv = S.ver;
+  return S._b;
+}
+function roleCounts(S) {
+  const rc = { t: 0, p: 0, s: 0, o: 0 };
+  for (const pid of Object.keys(S.players)) rc[S.players[pid].role]++;
+  return rc;
+}
+function distOf(map, n, S) {
+  const d = Array.from({ length: n }, () => ({ t: 0, p: 0, s: 0, o: 0, all: 0 }));
+  for (const pid of Object.keys(map || {})) {
+    const v = map[pid], o = typeof v === "object" ? v.o : v, p = S.players[pid];
+    if (!p || o == null || !d[o]) continue;
+    d[o][p.role]++; d[o].all++;
+  }
+  return d;
+}
+function viewCommon(S, host, now) {
+  now = now || Date.now();
+  const st = S.stage, shown = S.phase === "revealed" || S.phase === "done";
+  const c = {
+    ver: S.ver, now, stage: st, qi: S.qi, phase: S.phase, deadline: S.deadline,
+    count: Object.keys(S.players).length, roles: roleCounts(S),
+    qaCount: S.qs.filter((q) => q.status === "open").length,
+  };
+  if (st === "lobby") {
+    c.warm = Object.keys(S.warm).slice(-70).map((pid) => S.warm[pid]);
+    c.warmCount = Object.keys(S.warm).length;
+  } else if (st === "r1") {
+    c.answered = Object.keys(S.r1).length;
+    if (shown || host) c.dist = distOf(S.r1, CONTENT.r1.opts.length, S);
+  } else if (isQuiz(st) && S.qi >= 0) {
+    const q = items(S)[S.qi], k = keyOf(S);
+    c.q = { t: q.t, o: q.o, n: items(S).length };
+    c.answered = Object.keys(S.ans[k] || {}).length;
+    if (shown) { c.q.a = q.a; c.q.x = q.x; c.dist = distOf(S.ans[k], q.o.length, S); }
+  } else if (st === "r4" && S.qi >= 0) {
+    const q = items(S)[S.qi], k = keyOf(S);
+    c.q = { t: q.t, o: q.o, n: items(S).length, who: q.who };
+    c.answered = Object.keys(S.r4[k] || {}).length;
+    if (shown) { c.q.a = q.a; c.q.x = q.x; c.dist = distOf(S.r4[k], q.o.length, S); }
+  } else if (st === "r5") {
+    c.pledges = S.pledges.slice(-40).reverse().map((p) => ({ id: p.id, text: p.text, name: (S.players[p.pid] || {}).name || "", role: (S.players[p.pid] || {}).role || "o" }));
+    c.pledgeCount = S.pledges.length;
+  }
+  if ((isQuiz(st) && (shown || S.phase === "idle")) || st === "end") {
+    const b = board(S);
+    if (b.anyRevealed) c.top = b.list.slice(0, 10).map((p) => ({ name: p.name, role: p.role, score: p.score }));
+  }
+  c.qs = S.qs.filter((q) => host || q.status !== "hidden").map((q) => ({
+    id: q.id, text: q.text, name: q.anon ? "" : (S.players[q.pid] || {}).name || "", role: q.anon ? "" : (S.players[q.pid] || {}).role || "",
+    votes: q.votes.length, status: q.status, at: q.at,
+  })).sort((a, b) => (a.status === "answered") - (b.status === "answered") || b.votes - a.votes || a.at - b.at).slice(0, 80);
+  if (st === "end") {
+    c.summary = { players: c.count, pledges: S.pledges.length, questions: S.qs.length, answered: S.qs.filter((q) => q.status === "answered").length };
+  }
+  return c;
+}
+function viewMe(S, pid) {
+  const p = S.players[pid];
+  if (!p) return { joined: false };
+  const b = board(S), st = S.stage, k = keyOf(S);
+  const me = { joined: true, name: p.name, role: p.role, score: b.tot[pid] || 0, rank: b.anyRevealed ? b.rank[pid] : 0, warm: S.warm[pid] || "", pledgeLeft: 3 - S.pledges.filter((x) => x.pid === pid).length, askLeft: 6 - S.qs.filter((x) => x.pid === pid).length };
+  me.voted = S.qs.filter((q) => q.votes.includes(pid)).map((q) => q.id);
+  me.mine = S.qs.filter((q) => q.pid === pid).map((q) => q.id);
+  if (st === "r1") me.pick = S.r1[pid] == null ? -1 : S.r1[pid];
+  if (isQuiz(st) && S.qi >= 0) { const a = (S.ans[k] || {})[pid]; me.pick = a ? a.o : -1; me.pts = a && (S.phase !== "open") ? a.p : 0; }
+  if (st === "r4" && S.qi >= 0) { const a = (S.r4[k] || {})[pid]; me.pick = a == null ? -1 : a; }
+  return me;
+}
+function exportCsv(S) {
+  const q = (s) => '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"';
+  const rn = (k) => (ROLES.find((r) => r.k === k) || {}).n || k;
+  const lines = [];
+  lines.push("# 提問"); lines.push(["編號", "狀態", "票數", "提問者", "身分", "問題"].map(q).join(","));
+  S.qs.slice().sort((a, b) => b.votes.length - a.votes.length).forEach((x) => lines.push([x.id, x.status, x.votes.length, x.anon ? "匿名" : (S.players[x.pid] || {}).name, x.anon ? "" : rn((S.players[x.pid] || {}).role), x.text].map(q).join(",")));
+  lines.push(""); lines.push("# 行動承諾"); lines.push(["暱稱", "身分", "承諾"].map(q).join(","));
+  S.pledges.forEach((x) => lines.push([(S.players[x.pid] || {}).name, rn((S.players[x.pid] || {}).role), x.text].map(q).join(",")));
+  lines.push(""); lines.push("# 溫度計（最難說得通的關係）"); lines.push(["選項", "老師", "家長", "專業人員", "其他", "合計"].map(q).join(","));
+  distOf(S.r1, CONTENT.r1.opts.length, S).forEach((d, i) => lines.push([CONTENT.r1.opts[i], d.t, d.p, d.s, d.o, d.all].map(q).join(",")));
+  lines.push(""); lines.push("# 排行榜"); lines.push(["名次", "暱稱", "身分", "分數"].map(q).join(","));
+  board(S).list.forEach((p, i) => lines.push([i + 1, p.name, rn(p.role), p.score].map(q).join(",")));
+  return "﻿" + lines.join("\r\n");
+}
+
+/*ENGINE_END*/
+</script>
+<script>
+/* ---------- 畫面與連線 ---------- */
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const roleOf = (k) => ROLES.find((r) => r.k === k) || ROLES[3];
+  const LTR = ["A", "B", "C", "D", "E"];
+  const chip = (k) => '<span class="chip ' + k + '">' + esc(roleOf(k).n) + "</span>";
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+  const isQuizStage = (s) => s === "r2" || s === "r3";
+  const stageName = (id) => (STAGES.find((s) => s.id === id) || {}).name;
+
+  function stackFrame(prefix, labels) {
+    return '<div class="stack">' + labels.map((l, i) =>
+      '<div class="srow"><div class="lab">' + (LTR[i] ? "" : "") + esc(l) + '</div><div class="track">' +
+      roleKeys.map((k) => '<span class="' + k + '" id="' + prefix + i + k + '"></span>').join("") +
+      '</div><div class="val" id="' + prefix + "v" + i + '"></div></div>').join("") + "</div>";
+  }
+  const roleKeys = ROLES.map((r) => r.k);
+  function stackFill(prefix, dist, mark) {
+    const max = Math.max(1, ...dist.map((d) => d.all));
+    const total = dist.reduce((a, d) => a + d.all, 0);
+    dist.forEach((d, i) => {
+      roleKeys.forEach((k) => { const e = $(prefix + i + k); if (e) e.style.width = (d[k] / max) * 100 + "%"; });
+      const v = $(prefix + "v" + i);
+      if (v) v.textContent = d.all + " 人" + (total ? "（" + Math.round((d.all / total) * 100) + "%）" : "") + (mark === i ? "　★ 較建議" : "");
+    });
+  }
+  const legend = () => '<div class="legend">' + ROLES.map((r) => '<span><i style="background:' + r.c + '"></i>' + r.n + "</span>").join("") + "</div>";
+
+  /* ====================== 傳輸層 ====================== */
+  function serverTransport(isHost, pid) {
+    let cb = () => {}, scb = () => {};
+    const key = new URLSearchParams(location.search).get("key") || "";
+    const kq = key ? "&key=" + encodeURIComponent(key) : "";
+    return {
+      pid, isHost, demo: false,
+      onView(f) { cb = f; }, onStatus(f) { scb = f; },
+      start() {
+        const es = new EventSource("/events?pid=" + encodeURIComponent(pid) + (isHost ? "&host=1" + kq : ""));
+        es.onmessage = (e) => { try { cb(JSON.parse(e.data)); } catch (_) {} };
+        es.onopen = () => scb("ok");
+        es.onerror = () => scb("bad");
+      },
+      async send(a) {
+        try {
+          const r = await fetch("/act", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pid, host: isHost, key, a }) });
+          return await r.json();
+        } catch (e) { return { err: "network" }; }
+      },
+      async info() { try { return await (await fetch("/info")).json(); } catch (e) { return { urls: [] }; } },
+      async csv() { return await (await fetch("/export.csv" + (key ? "?key=" + encodeURIComponent(key) : ""))).text(); },
+    };
+  }
+
+  function makeHub() {
+    const S = createState(); const subs = [];
+    const hub = {
+      S,
+      sub(pid, host, f) { subs.push({ pid, host, f }); f(hub.view(pid, host)); },
+      view(pid, host) { const now = Date.now(); return { c: viewCommon(S, host, now), me: viewMe(S, pid) }; },
+      act(pid, host, a) { const r = reduce(S, Object.assign({}, a, { pid }), Date.now(), host); if (r.ok) hub.notify(); return r; },
+      notify() { subs.forEach((s) => s.f(hub.view(s.pid, s.host))); },
+    };
+    setInterval(() => { if (tick(S, Date.now())) hub.notify(); }, 500);
+    return hub;
+  }
+  function localTransport(hub, pid, isHost) {
+    let cb = () => {};
+    return {
+      pid, isHost, demo: true,
+      onView(f) { cb = f; }, onStatus() {},
+      start() { hub.sub(pid, isHost, (v) => cb(v)); },
+      send(a) { return Promise.resolve(hub.act(pid, isHost, a)); },
+      info() { return Promise.resolve({ urls: ["http://192.168.0.10:3000/"], demo: true }); },
+      csv() { return Promise.resolve(exportCsv(hub.S)); },
+    };
+  }
+
+  /* ====================== 觀眾端 ====================== */
+  function mountPlayer(root, T) {
+    let V = null, offset = 0, tab = "play", lastSig = "", sawQa = false, autoJoin = false;
+    let role = "t";
+    root.innerHTML =
+      '<div class="pl"><div class="pl-top"><div class="pl-brand">跨界溝通大挑戰</div><div class="pl-me" id="me"></div></div>' +
+      '<div class="conn" id="conn" hidden>連線中斷，正在重新連線…</div><main class="pl-main" id="main"></main>' +
+      '<nav class="tabs"><button data-tab="play" class="on">活動</button><button data-tab="qa">提問<span class="badge" id="qab" hidden></span></button></nav></div>';
+    const main = root.querySelector("#main"), conn = root.querySelector("#conn"), meBox = root.querySelector("#me");
+    const q = (s) => main.querySelector(s);
+    T.onStatus((s) => { conn.hidden = s === "ok"; });
+    T.onView((v) => { V = v; offset = v.c.now - Date.now(); render(); });
+    root.querySelector(".tabs").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-tab]"); if (!b) return; tab = b.dataset.tab; render();
+    });
+    const nowS = () => Date.now() + offset;
+
+    function send(a) { return T.send(a); }
+    main.addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-act]"); if (!b || b.disabled) return;
+      const act = b.dataset.act, c = V.c, me = V.me;
+      if (act === "role") { role = b.dataset.v; main.querySelectorAll("[data-act=role]").forEach((x) => x.classList.toggle("on", x === b)); return; }
+      if (act === "join") {
+        const name = (q("#nm").value || "").trim(); if (!name) { q("#nm").focus(); return; }
+        store.set("kj_profile", JSON.stringify({ name, role }));
+        const r = await send({ type: "join", name, role });
+        if (r.err) { q("#jerr").textContent = "加入失敗，請再試一次"; }
+        return;
+      }
+      if (act === "opt") {
+        const i = +b.dataset.i;
+        const type = c.stage === "r1" ? "vote" : c.stage === "r4" ? "choose" : "answer";
+        if (type === "answer" && me.pick >= 0) return;
+        me.pick = i; fill(); // 先在本機顯示，伺服器回覆後再校正
+        const r = await send({ type, opt: i });
+        if (r.err && r.err !== "done") { me.pick = -1; fill(); }
+        return;
+      }
+      if (act === "warm") { const v = q("#warm").value; if (v.trim()) { await send({ type: "warm", text: v }); q("#warm").value = ""; } return; }
+      if (act === "pledge") { const v = q("#pledge").value; if (v.trim()) { const r = await send({ type: "pledge", text: v }); if (!r.err) q("#pledge").value = ""; } return; }
+      if (act === "ask") { const v = q("#ask").value; if (v.trim()) { const r = await send({ type: "ask", text: v, anon: q("#anon").checked }); if (!r.err) q("#ask").value = ""; else q("#askerr").textContent = r.err === "limit" ? "每人最多送出 6 題" : "送出失敗"; } return; }
+      if (act === "up") { await send({ type: "upvote", id: +b.dataset.id }); return; }
+    });
+
+    function optsFrame(opts, disabled) {
+      return '<div class="opts">' + opts.map((t, i) => '<button class="opt" data-act="opt" data-i="' + i + '" id="o' + i + '"><span class="ltr">' + LTR[i] + '</span><span>' + esc(t) + "</span></button>").join("") + "</div>";
+    }
+
+    function screens() {
+      const c = V.c, me = V.me, st = c.stage;
+      if (tab === "qa") return qaScreen();
+      if (st === "lobby") return {
+        sig: "lobby",
+        frame: '<div class="card"><p class="kick">已加入</p><h2>歡迎，' + esc(me.name) + '</h2><p class="mute">請看大螢幕，講者會帶大家一起開始。</p></div>' +
+          '<div class="card"><p class="kick">暖身</p><h2>' + esc(CONTENT.warmHint) + '</h2><input class="field" id="warm" maxlength="12" placeholder="例如：期待、緊張、好奇" autocomplete="off"><div style="height:10px"></div><button class="btn block" data-act="warm">送出</button><p class="mute" id="wmsg"></p></div>',
+        fill() { q("#wmsg").textContent = me.warm ? "已送出：「" + me.warm + "」，可再送出一次修改。" : ""; },
+      };
+      if (st === "r1") {
+        const open = c.phase === "open";
+        return {
+          sig: "r1" + c.phase,
+          frame: '<div class="card"><p class="kick">R1 · 現場溫度計</p><h2>' + esc(CONTENT.r1.q) + '</h2><p class="mute">' + (open ? esc(CONTENT.r1.hint.replace("講者揭曉後會看到", "揭曉後會看到")) + "　可在揭曉前更改。" : "投票已鎖定，看看大家怎麼想。") + "</p>" + optsFrame(CONTENT.r1.opts) + "</div>" +
+            (open ? "" : '<div class="card"><h2>全場結果</h2>' + stackFrame("rs", CONTENT.r1.opts) + legend() + "</div>"),
+          fill() {
+            CONTENT.r1.opts.forEach((_, i) => { const b = q("#o" + i); b.classList.toggle("sel", me.pick === i); b.disabled = !open; });
+            if (!open && c.dist) stackFill("rs", c.dist);
+          },
+        };
+      }
+      if (isQuizStage(st) || st === "r4") {
+        const cfg = CONTENT[st];
+        if (c.qi < 0) return { sig: st + "idle", frame: '<div class="wait card"><div class="pulse"></div><p class="kick">' + esc(STAGES.find((s) => s.id === st).short + " · " + stageName(st)) + "</p><h2>準備開始</h2><p class=\"mute\">" + esc(cfg.intro) + "</p></div>", fill() {} };
+        if (c.phase === "done") {
+          if (st === "r4") return { sig: st + "done", frame: '<div class="wait card"><h2>本輪完成</h2><p class="mute">謝謝大家的選擇，請看大螢幕的討論。</p></div>', fill() {} };
+          return { sig: st + "done", frame: '<div class="card"><p class="kick">排行榜</p><h2>目前前十名</h2><ol class="board" id="bd"></ol></div><div class="card" id="mine"></div>', fill() { renderBoard(q("#bd"), c.top || []); q("#mine").innerHTML = me.rank ? "你的名次：<b>第 " + me.rank + " 名</b>，累計 <b>" + me.score + "</b> 分" : "本輪尚無積分"; } };
+        }
+        const open = c.phase === "open", qd = c.q;
+        return {
+          sig: st + c.qi + (open ? "o" : "r"),
+          frame: '<div class="card"><p class="kick">' + esc(STAGES.find((s) => s.id === st).short + " · 第 " + (c.qi + 1) + " / " + qd.n + " 題") + (qd.who ? " · " + esc(qd.who) : "") + "</p>" +
+            (isQuizStage(st) && open ? '<div class="timer" id="tm"><i id="tb"></i></div>' : "") +
+            "<h2>" + esc(qd.t) + "</h2>" + optsFrame(qd.o) + '</div><div id="fb"></div>',
+          fill() {
+            qd.o.forEach((_, i) => {
+              const b = q("#o" + i); if (!b) return;
+              const locked = isQuizStage(st) ? me.pick >= 0 || !open : !open;
+              b.disabled = locked;
+              b.classList.toggle("sel", open && me.pick === i);
+              if (!open && qd.a != null) {
+                b.classList.toggle("ok", i === qd.a);
+                b.classList.toggle("no", me.pick === i && i !== qd.a && isQuizStage(st));
+                b.classList.toggle("sel", st === "r4" && me.pick === i && i !== qd.a);
+                b.classList.toggle("dim", i !== qd.a && me.pick !== i);
+              }
+            });
+            const fb = q("#fb"); if (!fb) return;
+            if (open) { fb.innerHTML = me.pick >= 0 ? '<div class="fb">已送出' + (st === "r4" ? "，可在揭曉前更改" : "，等待揭曉") + "。</div>" : ""; return; }
+            if (isQuizStage(st)) {
+              const right = me.pick === qd.a;
+              fb.innerHTML = '<div class="fb ' + (right ? "good" : "bad") + '"><b>' + (me.pick < 0 ? "這題沒有作答" : right ? "答對了！+" + me.pts + " 分" : "再想想～") + "</b>" + esc(qd.x) + (me.rank ? '<p class="mute" style="margin-top:8px">目前第 ' + me.rank + " 名，累計 " + me.score + " 分</p>" : "") + "</div>";
+            } else {
+              fb.innerHTML = '<div class="fb"><b>較建議的回應：' + LTR[qd.a] + "</b>" + esc(qd.x) + '</div><div class="card"><h2>全場選擇</h2>' + stackFrame("r4", qd.o.map((_, i) => "選項 " + LTR[i])) + legend() + "</div>";
+              if (c.dist) stackFill("r4", c.dist, qd.a);
+            }
+          },
+        };
+      }
+      if (st === "r5") return {
+        sig: "r5",
+        frame: '<div class="card"><p class="kick">R5 · 行動承諾牆</p><h2>' + esc(CONTENT.pledgeHint) + '</h2><textarea class="field" id="pledge" maxlength="80" placeholder="本週，我會……"></textarea><div style="height:10px"></div><button class="btn block" data-act="pledge">貼到承諾牆</button><p class="mute" id="pl-left"></p></div><div id="wall"></div>',
+        fill() {
+          q("#pl-left").textContent = me.pledgeLeft > 0 ? "還可以再貼 " + me.pledgeLeft + " 則" : "已貼滿 3 則，謝謝！";
+          q("#wall").innerHTML = (c.pledges || []).slice(0, 12).map((p) => '<div class="wallcard ' + p.role + '">' + esc(p.text) + "<small>" + esc(p.name) + "</small></div>").join("");
+        },
+      };
+      if (st === "qa") return { sig: "qahint", frame: '<div class="wait card"><p class="kick">Q&A</p><h2>歡迎提問</h2><p class="mute">請切換到下方「提問」分頁，送出你的問題，也可以替想聽的問題按讚。</p></div>', fill() {} };
+      return { sig: "end", frame: '<div class="wait card"><h2>謝謝你的參與</h2><p class="mute">希望今天的練習，能變成明天的一個小動作。</p><div id="endrank" style="margin-top:8px"></div></div>', fill() { q("#endrank").innerHTML = me.rank ? "最終名次：<b>第 " + me.rank + " 名</b>（" + me.score + " 分）" : ""; } };
+    }
+
+    function renderBoard(ol, list) {
+      ol.innerHTML = list.map((p, i) => '<li><span class="no">' + (i + 1) + '</span><span class="nm">' + esc(p.name) + "</span>" + chip(p.role) + '<span class="sc">' + p.score + "</span></li>").join("");
+    }
+
+    function qaScreen() {
+      const c = V.c, me = V.me;
+      return {
+        sig: "qa",
+        frame: '<div class="card"><p class="kick">Q&A</p><h2>有想問的，都可以送出</h2><textarea class="field" id="ask" maxlength="140" placeholder="請輸入問題（最多 140 字）"></textarea><label class="check"><input type="checkbox" id="anon"> 匿名提問</label><button class="btn block" data-act="ask">送出問題</button><p class="mute" id="askerr"></p></div><h2 style="margin:16px 4px 6px;font-size:16px">大家的提問（按讚＝我也想聽）</h2><div id="ql"></div>',
+        fill() {
+          q("#ql").innerHTML = c.qs.length ? c.qs.map((x) =>
+            '<div class="qitem"><div class="tx">' + (x.status === "answered" ? '<span class="tag">已回答</span>' : "") + esc(x.text) + '<div class="by">' + (x.name ? esc(x.name) : "匿名") + (me.mine.includes(x.id) ? "（我）" : "") + '</div></div><button class="up ' + (me.voted.includes(x.id) ? "on" : "") + '" data-act="up" data-id="' + x.id + '" aria-label="我也想聽">▲<span>' + x.votes + "</span></button></div>").join("") : '<p class="mute" style="padding:8px 4px">還沒有提問，你可以當第一位。</p>';
+          q("#askerr").textContent = me.askLeft <= 0 ? "你已送出 6 題，額度已用完。" : "";
+        },
+      };
+    }
+
+    function joinScreen() {
+      return {
+        sig: "join",
+        frame: '<div class="card"><p class="kick">歡迎加入</p><h2>跨界溝通大挑戰</h2><p class="mute">學前特教老師 · 家長 · 專業人員，一起練習把話說通。</p><label for="nm" style="font-weight:700">暱稱（不必真名）</label><input class="field" id="nm" maxlength="12" autocomplete="off" placeholder="例如：小米老師、阿凱爸爸"><p style="font-weight:700;margin:14px 0 0">我的身分</p><div class="roles">' + ROLES.map((r, i) => '<button data-act="role" data-v="' + r.k + '" class="' + (i === 0 ? "on" : "") + '">' + r.n + "</button>").join("") + '</div><button class="btn block" data-act="join">加入</button><p class="mute" id="jerr" style="color:var(--coral)"></p><p class="mute">身分只用來分組顯示統計，不會公開個別答案。</p></div>',
+        fill() {},
+      };
+    }
+
+    function render() {
+      if (!V) return;
+      const c = V.c, me = V.me;
+      if (!me.joined) {
+        const saved = store.get("kj_profile");
+        if (saved && !autoJoin) { autoJoin = true; try { const p = JSON.parse(saved); send({ type: "join", name: p.name, role: p.role }); return; } catch (e) {} }
+        meBox.innerHTML = "";
+        if (lastSig !== "join") { const s = joinScreen(); main.innerHTML = s.frame; lastSig = "join"; }
+        return;
+      }
+      meBox.innerHTML = '<b>' + esc(me.name) + "</b>" + chip(me.role) + (me.rank ? '<span>第' + me.rank + "名</span>" : "");
+      if (c.stage === "qa" && !sawQa) { sawQa = true; tab = "qa"; }
+      if (c.stage !== "qa") sawQa = false;
+      root.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
+      const qb = root.querySelector("#qab"); qb.hidden = !c.qaCount; qb.textContent = c.qaCount;
+      const s = screens();
+      if (s.sig !== lastSig) { main.innerHTML = s.frame; lastSig = s.sig; main.scrollTop = 0; }
+      s.fill();
+    }
+    function fill() { if (V) { const s = screens(); if (s.sig === lastSig) s.fill(); } }
+
+    function frameTimer() {
+      const tb = root.querySelector("#tb");
+      if (tb && V && V.c.deadline) {
+        const limit = CONTENT[V.c.stage].limit * 1000, left = Math.max(0, V.c.deadline - nowS());
+        tb.style.width = Math.min(100, (left / limit) * 100) + "%";
+        tb.parentNode.classList.toggle("low", left < 6000);
+      }
+      requestAnimationFrame(frameTimer);
+    }
+    frameTimer();
+    T.start();
+  }
+
+  /* ====================== 主持人端 ====================== */
+  function mountHost(root, T) {
+    let V = null, offset = 0, lastSig = "", urlI = 0, info = { urls: [] }, resetArm = 0;
+    root.innerHTML =
+      '<div class="host"><div class="h-top"><div class="h-brand">跨界溝通大挑戰<small>當教學遇上療育 · 互動工作坊</small></div><div class="steps" id="steps"></div><div class="h-stat" id="hstat"></div></div>' +
+      '<div class="h-main" id="hmain"></div><div class="h-bar"><div class="hint">快捷鍵：空白鍵／→ 下一步　← 上一階段　</div><button class="hbtn sec" id="prev">上一階段</button><button class="hbtn" id="prim">開始</button></div></div>';
+    const hm = root.querySelector("#hmain"), prim = root.querySelector("#prim"), prev = root.querySelector("#prev");
+    const q = (s) => hm.querySelector(s);
+    T.onView((v) => { V = v; offset = v.c.now - Date.now(); render(); });
+    T.onStatus(() => {});
+    const nowS = () => Date.now() + offset;
+    const stIdx = () => STAGE_IDS.indexOf(V.c.stage);
+
+    function primary() {
+      const c = V.c, st = c.stage, n = (isQuizStage(st) ? CONTENT[st].qs : st === "r4" ? CONTENT.r4.qs : []).length;
+      if (st === "lobby") return { label: "開始：R1 現場溫度計", fn: () => T.send({ type: "stage", stage: "r1" }) };
+      if (st === "r1") return c.phase === "open" ? { label: "鎖定並揭曉結果", fn: () => T.send({ type: "reveal" }) } : { label: "下一階段：R2 翻譯機搶答", fn: () => T.send({ type: "stage", stage: "r2" }) };
+      if (isQuizStage(st) || st === "r4") {
+        if (c.phase === "idle") return { label: "開始第 1 題", fn: () => T.send({ type: "next" }) };
+        if (c.phase === "open") return { label: "揭曉答案", fn: () => T.send({ type: "reveal" }) };
+        if (c.phase === "revealed") return { label: c.qi + 1 < n ? "下一題（" + (c.qi + 2) + "/" + n + "）" : isQuizStage(st) ? "看排行榜" : "完成本輪", fn: () => T.send({ type: "next" }) };
+        const nx = STAGES[stIdx() + 1]; return { label: "下一階段：" + nx.short + " " + nx.name, fn: () => T.send({ type: "stage", stage: nx.id }) };
+      }
+      if (st === "r5") return { label: "下一階段：Q&A 提問牆", fn: () => T.send({ type: "stage", stage: "qa" }) };
+      if (st === "qa") return { label: "結束：謝謝大家", fn: () => T.send({ type: "stage", stage: "end" }) };
+      return { label: "匯出紀錄（CSV）", fn: exportNow };
+    }
+    async function exportNow() {
+      const text = await T.csv();
+      const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+      const a = document.createElement("a"); a.href = url; a.download = "跨界溝通大挑戰_紀錄.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+    prim.onclick = () => { if (V) primary().fn(); };
+    prev.onclick = () => { if (V && stIdx() > 0) T.send({ type: "stage", stage: STAGE_IDS[stIdx() - 1] }); };
+    document.addEventListener("keydown", (e) => {
+      if (!V || /INPUT|TEXTAREA/.test((e.target || {}).tagName || "")) return;
+      if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); primary().fn(); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); prev.onclick(); }
+    });
+    root.querySelector("#steps").addEventListener("click", (e) => { const b = e.target.closest("[data-st]"); if (b) T.send({ type: "stage", stage: b.dataset.st }); });
+    hm.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-qs]"); if (b) { T.send({ type: "qstatus", id: +b.dataset.id, status: b.dataset.qs }); return; }
+      if (e.target.closest("#pubgo")) {
+        let v = (q("#pubin").value || "").trim().replace(/\/+$/, "");
+        if (/^https?:\/\/[^\s]+$/i.test(v)) { v += "/"; info.urls = [v].concat(info.urls.filter((u) => u !== v)); urlI = 0; try { sessionStorage.setItem("kj_pub", v); } catch (_) {} lastSig = ""; render(); }
+        else q("#pubin").style.outline = "3px solid #E4572E";
+        return;
+      }
+      if (e.target.closest("#swurl")) { urlI = (urlI + 1) % Math.max(1, info.urls.length); drawQr(); }
+      if (e.target.closest("#exp")) exportNow();
+      if (e.target.closest("#rst")) {
+        const b2 = e.target.closest("#rst"); if (Date.now() - resetArm > 4000) { resetArm = Date.now(); b2.textContent = "再按一次確定清空全部資料"; } else { T.send({ type: "reset" }); resetArm = 0; }
+      }
+    });
+
+    function drawQr() {
+      const box = q("#qr"); if (!box) return;
+      const u = info.urls[urlI] || "http://（無法取得網址）/";
+      box.innerHTML = QR.svg(u, { margin: 1 });
+      q("#url").textContent = u.replace(/^http:\/\//, "");
+      const sw = q("#swurl"); if (sw) sw.hidden = info.urls.length < 2;
+    }
+
+    function optsHtml(qd, cls, mini) { return '<div class="hopts' + (cls || "") + '">' + qd.o.map((t, i) => '<div class="hopt" id="h' + i + '"><span class="ltr">' + LTR[i] + '</span><span class="tx">' + esc(t) + (mini ? '<div class="track mini off" id="m' + i + '">' + roleKeys.map((k) => '<span class="' + k + '" id="h4' + i + k + '"></span>').join("") + '</div><div class="val" id="h4v' + i + '"></div>' : "") + '</span><span class="cnt" id="hc' + i + '"></span></div>').join("") + "</div>"; }
+    function topHtml(k, t, sub) { return '<div><div class="h-kick">' + esc(k) + '</div><h1 class="h-title">' + t + "</h1>" + (sub ? '<div class="h-sub">' + sub + "</div>" : "") + "</div>"; }
+
+    function screen() {
+      const c = V.c, st = c.stage;
+      const sh = STAGES.find((s) => s.id === st);
+      if (st === "lobby") return {
+        sig: "lobby" + info.urls.length,
+        frame: '<div class="lobby"><div class="qrcard"><div id="qr"></div><div class="url" id="url"></div>' + (T.demo ? '<div class="demo">示範網址，非真實連線</div>' : "") + '<button id="swurl" hidden>換一個網址</button>' + (T.demo ? "" : '<div class="pub"><input id="pubin" placeholder="已有 https 網址？貼在這裡" aria-label="https 網址"><button id="pubgo">套用</button></div>') + '</div><div><div class="h-kick">R0 · 入場與暖身</div><h1 class="h-title">用手機掃描 QR code，加入遊戲</h1><div class="h-sub" id="lsub">輸入暱稱、選擇身分即可加入。</div><div style="height:2vh"></div><div class="bigcount"><span id="cnt">0</span><small>人已加入</small></div><div class="rolechips" id="rc"></div><div class="h-sub" style="margin-top:1vh">暖身：' + esc(CONTENT.warmHint) + '</div><div class="cloud" id="cloud"></div></div></div>',
+        fill() {
+          if (!q("#qr svg")) drawQr();
+          q("#cnt").textContent = c.count;
+          const u0 = info.urls[urlI] || ""; q("#lsub").textContent = /^https:/.test(u0) ? "手機有網路（行動網路或 Wi-Fi 皆可）就能加入，輸入暱稱、選擇身分即可。" : "手機請連到與講者電腦相同的 Wi-Fi，輸入暱稱、選擇身分即可。";
+          q("#rc").innerHTML = ROLES.map((r) => '<span class="chip ' + r.k + '">' + r.n + " " + c.roles[r.k] + "</span>").join("");
+          const cl = q("#cloud"), have = cl.children.length, w = c.warm || [];
+          if (w.length < have) cl.innerHTML = "";
+          for (let i = cl.children.length; i < w.length; i++) { const s = document.createElement("span"); s.textContent = w[i]; cl.appendChild(s); }
+        },
+      };
+      if (st === "r1") return {
+        sig: "r1",
+        frame: topHtml("R1 · " + sh.name, esc(CONTENT.r1.q), '<span id="ans"></span>') + '<div class="hstack" id="hs">' + stackFrame("hs", CONTENT.r1.opts) + '</div><div class="hlegend">' + ROLES.map((r) => '<span><i style="background:' + r.c + '"></i>' + r.n + "</span>").join("") + "</div>",
+        fill() { q("#ans").textContent = "已作答 " + c.answered + " / " + c.count + " 人" + (c.phase === "open" ? "　（投票進行中）" : "　（已鎖定）"); if (c.dist) stackFill("hs", c.dist); },
+      };
+      if (isQuizStage(st) || st === "r4") {
+        const cfg = CONTENT[st];
+        if (c.qi < 0) return {
+          sig: st + "idle",
+          frame: topHtml(sh.short + " · " + sh.name, esc(sh.name), esc(cfg.intro)) + '<div class="expl">共 <b>' + cfg.qs.length + "</b> 題" + (cfg.limit ? "，每題 <b>" + cfg.limit + " 秒</b>，答得越快分數越高（答對 500–1000 分）" : "，沒有計分，重點是討論") + "。準備好就按「開始第 1 題」。</div>" + (isQuizStage(st) ? '<div class="hboard" id="bd"></div>' : ""),
+          fill() { const bd = q("#bd"); if (bd) bd.innerHTML = c.top ? '<div class="h-sub">目前排行榜</div>' + boardHtml(c.top.slice(0, 5)) : ""; },
+        };
+        if (c.phase === "done") {
+          if (st === "r4") return { sig: "r4done", frame: topHtml("R4 · 溝通小劇場", "三個情境都走完了", "共同的原則：先描述，再理解，最後邀請。") + '<div class="expl"><b>帶走：</b>回應之前先問自己——我描述的是事實，還是我的判斷？我有沒有邀請對方一起決定下一步？</div>', fill() {} };
+          return { sig: st + "done", frame: topHtml(sh.short + " · " + sh.name, "排行榜 前十名") + '<div class="hboard" id="bd"></div>', fill() { q("#bd").innerHTML = boardHtml(c.top || []); } };
+        }
+        const open = c.phase === "open", qd = c.q;
+        return {
+          sig: st + c.qi + (open ? "o" : "r"),
+          frame: '<div class="hrow"><div style="flex:1">' + topHtml(sh.short + " · 第 " + (c.qi + 1) + " / " + qd.n + " 題" + (qd.who ? " · " + qd.who : ""), esc(qd.t)) + "</div>" + (open && isQuizStage(st) ? '<div class="tnum" id="tn">20</div>' : "") + "</div>" +
+            (open && isQuizStage(st) ? '<div class="htimer" id="ht"><i id="hi"></i></div>' : "") + optsHtml(qd, st === "r4" ? " one" : "", st === "r4") + '<div class="hans" id="hans"></div><div id="hx"></div>',
+          fill() {
+            q("#hans").textContent = open ? "已作答 " + c.answered + " / " + c.count + " 人" : "";
+            if (!open) {
+              qd.o.forEach((_, i) => { const e = q("#h" + i); e.classList.toggle("ok", i === qd.a); e.classList.toggle("best", st === "r4" && i === qd.a); e.classList.toggle("dim", i !== qd.a && st !== "r4"); if (c.dist && isQuizStage(st)) q("#hc" + i).textContent = c.dist[i].all + " 人"; });
+              if (!q("#hx").innerHTML) {
+                if (st === "r4") q("#hx").innerHTML = '<div class="expl"><b>為什麼較建議 ' + LTR[qd.a] + "？</b> " + esc(qd.x) + '</div><div class="hlegend">' + ROLES.map((r) => '<span><i style="background:' + r.c + '"></i>' + r.n + "</span>").join("") + "</div>";
+                else q("#hx").innerHTML = '<div class="expl"><b>解析：</b>' + esc(qd.x) + '</div><div id="top3" class="hlegend"></div>';
+              }
+              if (st === "r4" && c.dist) { qd.o.forEach((_, i) => q("#m" + i).classList.remove("off")); stackFill("h4", c.dist, qd.a); }
+              const t3 = q("#top3"); if (t3 && c.top) t3.innerHTML = "<span>目前前三名：</span>" + c.top.slice(0, 3).map((p, i) => "<span><b>" + (i + 1) + ". " + esc(p.name) + "</b> " + p.score + " 分</span>").join("");
+            }
+          },
+        };
+      }
+      if (st === "r5") return {
+        sig: "r5",
+        frame: topHtml("R5 · " + sh.name, esc(CONTENT.pledgeHint.split("（")[0]), '<span id="pc"></span>　請用手機貼上你的承諾') + '<div class="wall" id="wall"></div>',
+        fill() {
+          q("#pc").textContent = "已有 " + (c.pledgeCount || 0) + " 則承諾";
+          q("#wall").innerHTML = (c.pledges || []).map((p) => '<div class="wc ' + p.role + '">' + esc(p.text) + "<small>— " + esc(p.name) + "</small></div>").join("");
+        },
+      };
+      if (st === "qa") return {
+        sig: "qa",
+        frame: topHtml("Q&A", "提問牆", "用手機到「提問」分頁送出問題，按讚＝我也想聽；點右側按鈕標記已回答／隱藏。") + '<div class="hq" id="hq"></div>',
+        fill() {
+          q("#hq").innerHTML = c.qs.length ? c.qs.map((x) => '<div class="qi ' + x.status + '"><div class="vt">▲ ' + x.votes + "</div><div>" + esc(x.text) + "<small>" + (x.name ? esc(x.name) + "（" + esc(roleOf(x.role).n) + "）" : "匿名") + '</small></div><div class="ops">' +
+            (x.status === "answered" ? '<button data-qs="open" data-id="' + x.id + '">還原</button>' : '<button data-qs="answered" data-id="' + x.id + '">已回答</button>') +
+            (x.status === "hidden" ? '<button data-qs="open" data-id="' + x.id + '">顯示</button>' : '<button data-qs="hidden" data-id="' + x.id + '">隱藏</button>') + "</div></div>").join("") : '<div class="h-sub">還沒有提問。</div>';
+        },
+      };
+      return {
+        sig: "end",
+        frame: topHtml("完成", "謝謝大家", "把今天的收穫，變成下週的一個小動作。") + '<div class="endstats" id="es"></div><div class="hboard" id="bd" style="flex:none"></div><div class="row" style="gap:12px"><button class="hbtn" id="exp">匯出紀錄（CSV）</button><button class="hbtn danger" id="rst">重設全場</button></div>',
+        fill() {
+          const s = c.summary || {};
+          q("#es").innerHTML = [["參與人數", s.players], ["行動承諾", s.pledges], ["提問", s.questions], ["已回答", s.answered]].map((x) => "<div><b>" + (x[1] || 0) + "</b>" + x[0] + "</div>").join("");
+          q("#bd").innerHTML = c.top ? '<div class="h-sub">挑戰賽前五名</div>' + boardHtml(c.top.slice(0, 5)) : "";
+        },
+      };
+    }
+    function boardHtml(list) {
+      const max = Math.max(1, ...list.map((p) => p.score));
+      return list.map((p, i) => '<div class="it"><div class="bar" style="width:' + (p.score / max) * 100 + '%"></div><span class="no">' + (i + 1) + "</span><span>" + esc(p.name) + " " + chip(p.role) + '</span><span class="sc">' + p.score + "</span></div>").join("");
+    }
+
+    function render() {
+      const c = V.c, st = c.stage, i = stIdx();
+      root.querySelector("#steps").innerHTML = STAGES.map((s, k) => '<button data-st="' + s.id + '" class="' + (k === i ? "on" : k < i ? "past" : "") + '">' + s.short + "</button>").join("");
+      root.querySelector("#hstat").innerHTML = "<span><b>" + c.count + "</b> 人</span>" + (c.qaCount ? '<span class="h-q">提問 ' + c.qaCount + "</span>" : "");
+      const p = primary(); prim.textContent = p.label + "　→"; prev.disabled = i === 0;
+      const s = screen();
+      if (s.sig !== lastSig) { hm.innerHTML = s.frame; lastSig = s.sig; }
+      s.fill();
+    }
+    function tickTimer() {
+      if (V && V.c.phase === "open" && V.c.deadline && isQuizStage(V.c.stage)) {
+        const limit = CONTENT[V.c.stage].limit * 1000, left = Math.max(0, V.c.deadline - nowS());
+        const hi = root.querySelector("#hi"), tn = root.querySelector("#tn");
+        if (hi) { hi.style.width = Math.min(100, (left / limit) * 100) + "%"; hi.parentNode.classList.toggle("low", left < 6000); }
+        if (tn) tn.textContent = Math.ceil(left / 1000);
+      }
+      requestAnimationFrame(tickTimer);
+    }
+    tickTimer();
+    T.info().then((i) => { info = i; try { const v = sessionStorage.getItem("kj_pub"); if (v && !T.demo) info.urls = [v].concat(info.urls.filter((u) => u !== v)); } catch (_) {} if (V) { lastSig = ""; render(); } });
+    T.start();
+  }
+
+  /* ====================== 示範模式的模擬觀眾 ====================== */
+  function startBots(hub, n) {
+    const names = ["小米老師", "阿凱爸爸", "林治療師", "Amy", "王主任", "小安媽媽", "陳老師", "志明", "雅婷", "Peter", "佳玲老師", "大宇爸", "語言治療師小蔡", "OT 阿華", "小橘", "品妍", "子晴媽媽", "老周", "Joyce", "心怡", "阿嬤", "怡君老師", "小葵", "宗翰", "芳瑜"];
+    const warm = ["期待", "緊張", "好奇", "放鬆", "有點累", "興奮", "想學習", "平靜"];
+    const pledges = ["用「描述—理解—邀請」聯絡一位家長", "把一個 IEP 目標放進點心時間", "請治療師把建議改成嵌入式版本", "每週和助理員花 10 分鐘對齊目標", "家長晤談先說一個亮點"];
+    const asks = ["家長不願意接受評估時，老師可以做什麼？", "助理員怎麼和導師建立共識？", "治療師的建議在教室做不到時怎麼辦？", "疑似生的轉介時機要怎麼把握？"];
+    const bots = [];
+    const have = bots.length + Object.keys(hub.S.players).filter((p) => p.startsWith("bot-")).length;
+    for (let i = 0; i < n; i++) {
+      const pid = "bot-" + (have + i + 1) + "-" + Math.random().toString(36).slice(2, 6);
+      const role = ["t", "t", "t", "p", "p", "s", "s", "o"][Math.floor(Math.random() * 8)];
+      hub.act(pid, false, { type: "join", name: names[(have + i) % names.length] + (have + i >= names.length ? have + i : ""), role });
+      bots.push({ pid, role });
+    }
+    if (!hub._bots) { hub._bots = []; setInterval(() => step(hub), 700); }
+    hub._bots.push(...bots);
+    function step(hub) {
+      const S = hub.S, st = S.stage;
+      hub._bots.forEach((b) => {
+        if (Math.random() > 0.3) return;
+        const k = st + ":" + S.qi;
+        if (st === "lobby" && !S.warm[b.pid]) hub.act(b.pid, false, { type: "warm", text: warm[Math.floor(Math.random() * warm.length)] });
+        else if (st === "r1" && S.phase === "open") hub.act(b.pid, false, { type: "vote", opt: Math.random() < 0.45 ? 0 : Math.floor(Math.random() * 5) });
+        else if ((st === "r2" || st === "r3") && S.phase === "open" && !(S.ans[k] || {})[b.pid]) {
+          const qq = (st === "r2" ? CONTENT.r2 : CONTENT.r3).qs[S.qi]; hub.act(b.pid, false, { type: "answer", opt: Math.random() < 0.65 ? qq.a : Math.floor(Math.random() * qq.o.length) });
+        } else if (st === "r4" && S.phase === "open") { const qq = CONTENT.r4.qs[S.qi]; hub.act(b.pid, false, { type: "choose", opt: Math.random() < 0.55 ? qq.a : Math.floor(Math.random() * qq.o.length) }); }
+        else if (st === "r5" && Math.random() < 0.3) hub.act(b.pid, false, { type: "pledge", text: pledges[Math.floor(Math.random() * pledges.length)] });
+        else if ((st === "qa" || st === "r5") && Math.random() < 0.08) hub.act(b.pid, false, { type: "ask", text: asks[Math.floor(Math.random() * asks.length)], anon: Math.random() < 0.4 });
+        else if (st === "qa" && S.qs.length && Math.random() < 0.3) hub.act(b.pid, false, { type: "upvote", id: S.qs[Math.floor(Math.random() * S.qs.length)].id });
+      });
+    }
+  }
+
+  /* ====================== 啟動 ====================== */
+  function newPid() {
+    let id = store.get("kj_pid");
+    if (!id) { id = "u" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set("kj_pid", id); }
+    return id;
+  }
+  function boot() {
+    const root = document.getElementById("app");
+    const isFile = location.protocol === "file:";
+    const isHost = isFile || location.pathname.replace(/\/+$/, "") === "/host";
+    if (!isFile && !isHost) { mountPlayer(root, serverTransport(false, newPid())); return; }
+    if (!isFile) { mountHost(root, serverTransport(true, "host-main")); return; }
+    // 示範模式（直接開啟檔案）：主持人畫面 + 手機預覽 + 模擬觀眾
+    const hub = makeHub();
+    document.body.insertAdjacentHTML("afterbegin", '<div class="demo-banner">示範模式：資料只存在這個視窗，手機掃 QR 無法加入。現場請執行 node server.js，並用電腦開啟顯示的 /host 網址。</div>');
+    root.style.cssText = "height:100%;padding-top:26px";
+    const hostEl = document.createElement("div"); hostEl.style.height = "100%"; root.appendChild(hostEl);
+    mountHost(hostEl, localTransport(hub, "host-main", true));
+    const ph = document.createElement("div"); ph.className = "phone"; document.body.appendChild(ph);
+    mountPlayer(ph, localTransport(hub, "demo-viewer-1", false));
+    const tools = document.createElement("div"); tools.className = "demo-tools";
+    tools.innerHTML = '<button class="hbtn sec" id="addbots">＋ 加入 20 位模擬觀眾</button><button class="hbtn sec" id="tphone">收合／展開手機預覽</button>';
+    document.body.appendChild(tools);
+    tools.querySelector("#addbots").onclick = () => startBots(hub, 20);
+    tools.querySelector("#tphone").onclick = () => ph.classList.toggle("hidden");
+    setTimeout(() => startBots(hub, 24), 400);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+})();
+
+</script>
+</body>
+</html>
