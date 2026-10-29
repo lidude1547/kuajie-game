@@ -655,6 +655,19 @@ function exportCsv(S) {
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const roleOf = (k) => ROLES.find((r) => r.k === k) || ROLES[3];
   const LTR = ["A", "B", "C", "D", "E", "F"];
+  // 計時器：用背景執行緒（Web Worker）驅動，分頁被切到背景或被其他視窗蓋住時，也不會被瀏覽器降速（主持人頁面必須準時送出心跳）
+  const ticker = (function () {
+    let w = null, n = 0; const fns = {};
+    try {
+      w = new Worker(URL.createObjectURL(new Blob(["const t={};onmessage=function(e){var d=e.data;if(d.s){t[d.id]=setInterval(function(){postMessage(d.id)},d.ms)}else{clearInterval(t[d.id])}}"], { type: "text/javascript" })));
+      w.onmessage = (e) => { const f = fns[e.data]; if (f) f(); };
+    } catch (e) { w = null; }
+    return function (fn, ms) {
+      if (!w) { const t = setInterval(fn, ms); return () => clearInterval(t); }
+      const id = ++n; fns[id] = fn; w.postMessage({ s: 1, id, ms });
+      return () => { delete fns[id]; w.postMessage({ s: 0, id }); };
+    };
+  })();
   const chip = (k) => '<span class="chip ' + k + '">' + esc(roleOf(k).n) + "</span>";
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -716,7 +729,7 @@ function exportCsv(S) {
       listeners: [],
       notify() { subs.forEach((s) => s.f(hub.view(s.pid, s.host))); hub.listeners.forEach((f) => f()); },
     };
-    setInterval(() => { if (tick(S, Date.now())) hub.notify(); }, 500);
+    ticker(() => { if (tick(S, Date.now())) hub.notify(); }, 500);
     return hub;
   }
   function localTransport(hub, pid, isHost, opts) {
@@ -1141,7 +1154,7 @@ function exportCsv(S) {
         sendRaw(pkt(0x10, cat([strB("MQTT"), Uint8Array.of(4, 2), u16(30), strB(cid)])));
       };
       ws.onmessage = (e) => { buf = cat([buf, new Uint8Array(e.data)]); parse(); };
-      ws.onclose = ws.onerror = () => { alive = false; h.onStatus && h.onStatus("bad"); clearInterval(pingT); retry(); };
+      ws.onclose = ws.onerror = () => { alive = false; h.onStatus && h.onStatus("bad"); pingT && pingT(); pingT = 0; retry(); };
     }
     function retry() { if (closed) return; clearTimeout(retryT); retryT = setTimeout(() => { if (ws) { try { ws.onclose = ws.onerror = null; ws.close(); } catch (e) {} } connect(); }, 2000); }
     function parse() {
@@ -1156,7 +1169,7 @@ function exportCsv(S) {
           if (body[1] === 0) {
             alive = true;
             if (subs.length) sendRaw(pkt(0x82, cat([u16(pid++), ...subs.map((t) => cat([strB(t), Uint8Array.of(0)]))])));
-            clearInterval(pingT); pingT = setInterval(() => sendRaw(Uint8Array.of(0xc0, 0)), 20000);
+            pingT && pingT(); pingT = ticker(() => sendRaw(Uint8Array.of(0xc0, 0)), 20000);
             h.onStatus && h.onStatus("ok");
             while (queue.length) sendRaw(queue.shift());
           } else { try { ws.close(); } catch (e) {} }
@@ -1177,7 +1190,7 @@ function exportCsv(S) {
         return false;
       },
       isAlive: () => alive,
-      close() { closed = true; clearInterval(pingT); clearTimeout(retryT); try { ws.onclose = ws.onerror = null; ws.close(); } catch (e) {} },
+      close() { closed = true; pingT && pingT(); pingT = 0; clearTimeout(retryT); try { ws.onclose = ws.onerror = null; ws.close(); } catch (e) {} },
     };
   }
   const roomTopic = (code) => "kuajie/v1/" + code;
@@ -1269,9 +1282,11 @@ function exportCsv(S) {
     const report = () => { const n = Object.keys(okSet).filter((k) => okSet[k]).length; diag && diag(n > 0 ? "免伺服器模式：中繼站已連線（" + n + "/" + urls.length + "）。請保持此分頁開啟、電腦不要休眠；結束後請匯出紀錄。" : "無法連上中繼站（公用 MQTT）。請檢查這台電腦的網路／防火牆是否允許 wss 連線，系統會持續重試。", n > 0); };
     mqs = urls.map((u) => Mqtt(u, [p + "/act"], { onMessage: onMsg, onStatus(st) { okSet[u] = st === "ok"; report(); if (st === "ok") { lastC = ""; Object.keys(lastMe).forEach((k) => delete lastMe[k]); dirty = true; } } }));
     hub.listeners.push(() => { dirty = true; });
-    setInterval(() => { if (dirty) { dirty = false; flush(false); } }, 250);
-    setInterval(beat, 2000);
-    setInterval(() => flush(true), 30000);
+    ticker(() => { if (dirty) { dirty = false; flush(false); } }, 250);
+    ticker(beat, 2000);
+    ticker(() => flush(true), 30000);
+    let wl = null; const keepAwake = () => { try { if (navigator.wakeLock && !document.hidden) navigator.wakeLock.request("screen").then((l) => { wl = l; }).catch(() => {}); } catch (e) {} };
+    keepAwake(); document.addEventListener("visibilitychange", keepAwake);
   }
 
   /* ====================== 啟動 ====================== */
