@@ -52,6 +52,7 @@ textarea.field{min-height:92px;resize:vertical}
 .opts{display:grid;gap:10px;margin-top:12px}
 .opt{display:flex;align-items:flex-start;gap:12px;text-align:left;border:2px solid var(--line);background:#fff;border-radius:14px;padding:12px;font-size:16px;color:var(--ink);min-height:56px;line-height:1.45;width:100%}
 .opt .ltr{flex:none;width:32px;height:32px;border-radius:10px;color:#fff;font-weight:800;display:grid;place-items:center}
+.opt:nth-child(6) .ltr{background:var(--o0)}
 .opt:nth-child(1) .ltr{background:var(--o0)}.opt:nth-child(2) .ltr{background:var(--o1)}.opt:nth-child(3) .ltr{background:var(--o2)}.opt:nth-child(4) .ltr{background:var(--o3)}.opt:nth-child(5) .ltr{background:var(--o4)}
 .opt.sel{border-color:var(--teal);background:#E3F2F1}
 .opt.ok{border-color:var(--good);background:#E4F5EC}
@@ -128,6 +129,12 @@ textarea.field{min-height:92px;resize:vertical}
 .bigcount small{font-size:.28em;font-weight:700;color:#b9dcd9;margin-left:.3em}
 .rolechips{display:flex;gap:10px;flex-wrap:wrap;margin:1.2vh 0}
 .rolechips .chip{font-size:1em;padding:4px 14px}
+.wbars{display:grid;gap:.9vh;margin-top:1.4vh;max-width:46vw}
+.wrow{display:grid;grid-template-columns:minmax(0,17em) 1fr 2.2em;align-items:center;gap:12px;font-weight:700}
+.wrow .wl{font-size:clamp(14px,1.9vh,20px)}
+.wbar{height:2.2vh;min-height:12px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}
+.wbar i{display:block;height:100%;width:0;background:var(--amber,#F2A541);border-radius:999px;transition:width .5s}
+.wrow b{text-align:right;font-size:clamp(15px,2.2vh,24px)}
 .cloud{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start;margin-top:1vh;max-height:34vh;overflow:hidden}
 .cloud span{background:rgba(255,255,255,.14);border-radius:999px;padding:.25em .9em;font-weight:700;animation:pop .4s both}
 .cloud span:nth-child(3n){background:rgba(242,165,65,.3)}.cloud span:nth-child(3n+1){background:rgba(140,197,192,.25)}
@@ -410,7 +417,8 @@ const CONTENT = {
     ],
   },
   pledgeHint: "本週，我會……（例如：用「描述—理解—邀請」聯絡一位家長）",
-  warmHint: "用一個詞形容你現在的心情",
+  warmHint: "此刻的你，比較像哪一種狀態？",
+  warmOpts: ["期待，想學幾招帶回去", "好奇，想聽聽不同角度", "有點累，先慢慢聽", "有點緊張，怕跟不上", "帶著問題來，想找答案", "放鬆，來充電"],
 };
 
 /* ---------------- 引擎 ---------------- */
@@ -488,7 +496,8 @@ function reduce(S, a, now, isHost) {
   switch (t) {
     case "warm": {
       if (S.stage !== "lobby") return { err: "closed" };
-      const w = clean(a.text, 12); if (!w) return { err: "empty" };
+      const w = num(a.opt, CONTENT.warmOpts.length); if (w < 0) return { err: "bad" };
+      if (S.warm[pid] === w) return { ok: 1 };
       S.warm[pid] = w; bump(S); return { ok: 1 };
     }
     case "vote": {
@@ -577,7 +586,8 @@ function viewCommon(S, host, now) {
     qaCount: S.qs.filter((q) => q.status === "open").length,
   };
   if (st === "lobby") {
-    c.warm = Object.keys(S.warm).slice(-70).map((pid) => S.warm[pid]);
+    c.warmDist = CONTENT.warmOpts.map(() => 0);
+    Object.keys(S.warm).forEach((pid) => { const w = S.warm[pid]; if (c.warmDist[w] != null) c.warmDist[w]++; });
     c.warmCount = Object.keys(S.warm).length;
   } else if (st === "r1") {
     c.answered = Object.keys(S.r1).length;
@@ -613,7 +623,7 @@ function viewMe(S, pid) {
   const p = S.players[pid];
   if (!p) return { joined: false };
   const b = board(S), st = S.stage, k = keyOf(S);
-  const me = { joined: true, name: p.name, role: p.role, score: b.tot[pid] || 0, rank: b.anyRevealed ? b.rank[pid] : 0, warm: S.warm[pid] || "", pledgeLeft: 3 - S.pledges.filter((x) => x.pid === pid).length, askLeft: 6 - S.qs.filter((x) => x.pid === pid).length };
+  const me = { joined: true, k: st + ":" + S.qi, name: p.name, role: p.role, score: b.tot[pid] || 0, rank: b.anyRevealed ? b.rank[pid] : 0, warm: S.warm[pid] == null ? -1 : S.warm[pid], pledgeLeft: 3 - S.pledges.filter((x) => x.pid === pid).length, askLeft: 6 - S.qs.filter((x) => x.pid === pid).length };
   me.voted = S.qs.filter((q) => q.votes.includes(pid)).map((q) => q.id);
   me.mine = S.qs.filter((q) => q.pid === pid).map((q) => q.id);
   if (st === "r1") me.pick = S.r1[pid] == null ? -1 : S.r1[pid];
@@ -644,7 +654,7 @@ function exportCsv(S) {
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const roleOf = (k) => ROLES.find((r) => r.k === k) || ROLES[3];
-  const LTR = ["A", "B", "C", "D", "E"];
+  const LTR = ["A", "B", "C", "D", "E", "F"];
   const chip = (k) => '<span class="chip ' + k + '">' + esc(roleOf(k).n) + "</span>";
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -761,7 +771,7 @@ function exportCsv(S) {
         if (r.err && r.err !== "done") { me.pick = -1; fill(); }
         return;
       }
-      if (act === "warm") { const v = q("#warm").value; if (v.trim()) { await send({ type: "warm", text: v }); q("#warm").value = ""; } return; }
+      if (act === "warmopt") { const i = +b.dataset.i, prev = me.warm; me.warm = i; fill(); const r = await send({ type: "warm", opt: i }); if (r.err) { me.warm = prev; fill(); } return; }
       if (act === "pledge") { const v = q("#pledge").value; if (v.trim()) { const r = await send({ type: "pledge", text: v }); if (!r.err) q("#pledge").value = ""; } return; }
       if (act === "ask") { const v = q("#ask").value; if (v.trim()) { const r = await send({ type: "ask", text: v, anon: q("#anon").checked }); if (!r.err) q("#ask").value = ""; else q("#askerr").textContent = r.err === "limit" ? "每人最多送出 6 題" : "送出失敗"; } return; }
       if (act === "up") { await send({ type: "upvote", id: +b.dataset.id }); return; }
@@ -777,8 +787,8 @@ function exportCsv(S) {
       if (st === "lobby") return {
         sig: "lobby",
         frame: '<div class="card"><p class="kick">已加入</p><h2>歡迎，' + esc(me.name) + '</h2><p class="mute">請看大螢幕，講者會帶大家一起開始。</p></div>' +
-          '<div class="card"><p class="kick">暖身</p><h2>' + esc(CONTENT.warmHint) + '</h2><input class="field" id="warm" maxlength="12" placeholder="例如：期待、緊張、好奇" autocomplete="off"><div style="height:10px"></div><button class="btn block" data-act="warm">送出</button><p class="mute" id="wmsg"></p></div>',
-        fill() { q("#wmsg").textContent = me.warm ? "已送出：「" + me.warm + "」，可再送出一次修改。" : ""; },
+          '<div class="card"><p class="kick">暖身</p><h2>' + esc(CONTENT.warmHint) + '</h2><div class="opts">' + CONTENT.warmOpts.map((t, i) => '<button class="opt" data-act="warmopt" data-i="' + i + '" id="w' + i + '"><span class="ltr">' + LTR[i] + '</span><span>' + esc(t) + "</span></button>").join("") + '</div><p class="mute" id="wmsg"></p></div>',
+        fill() { CONTENT.warmOpts.forEach((_, i) => { const b = q("#w" + i); if (b) b.classList.toggle("sel", me.warm === i); }); q("#wmsg").textContent = me.warm >= 0 ? "已選擇，可隨時改選。" : "點一個最接近的就好，不用打字。"; },
       };
       if (st === "r1") {
         const open = c.phase === "open";
@@ -870,6 +880,7 @@ function exportCsv(S) {
     function render() {
       if (!V) return;
       const c = V.c, me = V.me;
+      if (me.joined) autoJoin = false;
       if (!me.joined) {
         const saved = store.get("kj_profile");
         if (saved && !autoJoin) { autoJoin = true; try { const p = JSON.parse(saved); send({ type: "join", name: p.name, role: p.role }); return; } catch (e) {} }
@@ -972,15 +983,14 @@ function exportCsv(S) {
       const sh = STAGES.find((s) => s.id === st);
       if (st === "lobby") return {
         sig: "lobby" + info.urls.length,
-        frame: '<div class="lobby"><div class="qrcard"><div id="qr"></div><div class="url" id="url"></div>' + (T.demo ? '<div class="demo">示範網址，非真實連線</div>' : "") + '<button id="swurl" hidden>換一個網址</button>' + (T.demo || T.relay ? "" : '<div class="pub"><input id="pubin" placeholder="已有 https 網址？貼在這裡" aria-label="https 網址"><button id="pubgo">套用</button></div>') + '</div><div><div class="h-kick">R0 · 入場與暖身</div><h1 class="h-title">用手機掃描 QR code，加入遊戲</h1><div class="h-sub" id="lsub">輸入暱稱、選擇身分即可加入。</div><div style="height:2vh"></div><div class="bigcount"><span id="cnt">0</span><small>人已加入</small></div><div class="rolechips" id="rc"></div><div class="h-sub" style="margin-top:1vh">暖身：' + esc(CONTENT.warmHint) + '</div><div class="cloud" id="cloud"></div></div></div>',
+        frame: '<div class="lobby"><div class="qrcard"><div id="qr"></div><div class="url" id="url"></div>' + (T.demo ? '<div class="demo">示範網址，非真實連線</div>' : "") + '<button id="swurl" hidden>換一個網址</button>' + (T.demo || T.relay ? "" : '<div class="pub"><input id="pubin" placeholder="已有 https 網址？貼在這裡" aria-label="https 網址"><button id="pubgo">套用</button></div>') + '</div><div><div class="h-kick">R0 · 入場與暖身</div><h1 class="h-title">用手機掃描 QR code，加入遊戲</h1><div class="h-sub" id="lsub">輸入暱稱、選擇身分即可加入。</div><div style="height:2vh"></div><div class="bigcount"><span id="cnt">0</span><small>人已加入</small></div><div class="rolechips" id="rc"></div><div class="h-sub" style="margin-top:1vh">暖身：' + esc(CONTENT.warmHint) + '</div><div class="wbars" id="wbars">' + CONTENT.warmOpts.map((t, i) => '<div class="wrow"><span class="wl">' + esc(t) + '</span><div class="wbar"><i id="wb' + i + '"></i></div><b id="wn' + i + '">0</b></div>').join("") + '</div></div></div>',
         fill() {
           if (!q("#qr svg")) drawQr();
           q("#cnt").textContent = c.count;
           const u0 = info.urls[urlI] || ""; q("#lsub").textContent = /^https:/.test(u0) ? "手機有網路（行動網路或 Wi-Fi 皆可）就能加入，輸入暱稱、選擇身分即可。" : "手機請連到與講者電腦相同的 Wi-Fi，輸入暱稱、選擇身分即可。";
           q("#rc").innerHTML = ROLES.map((r) => '<span class="chip ' + r.k + '">' + r.n + " " + c.roles[r.k] + "</span>").join("");
-          const cl = q("#cloud"), have = cl.children.length, w = c.warm || [];
-          if (w.length < have) cl.innerHTML = "";
-          for (let i = cl.children.length; i < w.length; i++) { const s = document.createElement("span"); s.textContent = w[i]; cl.appendChild(s); }
+          const wd = c.warmDist || [], mx = Math.max(1, ...wd);
+          CONTENT.warmOpts.forEach((_, i) => { q("#wb" + i).style.width = ((wd[i] || 0) / mx * 100) + "%"; q("#wn" + i).textContent = wd[i] || 0; });
         },
       };
       if (st === "r1") return {
@@ -1076,7 +1086,6 @@ function exportCsv(S) {
   /* ====================== 示範模式的模擬觀眾 ====================== */
   function startBots(hub, n) {
     const names = ["小米老師", "阿凱爸爸", "林治療師", "Amy", "王主任", "小安媽媽", "陳老師", "志明", "雅婷", "Peter", "佳玲老師", "大宇爸", "語言治療師小蔡", "OT 阿華", "小橘", "品妍", "子晴媽媽", "老周", "Joyce", "心怡", "阿嬤", "怡君老師", "小葵", "宗翰", "芳瑜"];
-    const warm = ["期待", "緊張", "好奇", "放鬆", "有點累", "興奮", "想學習", "平靜"];
     const pledges = ["用「描述—理解—邀請」聯絡一位家長", "把一個 IEP 目標放進點心時間", "請治療師把建議改成嵌入式版本", "每週和助理員花 10 分鐘對齊目標", "家長晤談先說一個亮點"];
     const asks = ["家長不願意接受評估時，老師可以做什麼？", "助理員怎麼和導師建立共識？", "治療師的建議在教室做不到時怎麼辦？", "疑似生的轉介時機要怎麼把握？"];
     const bots = [];
@@ -1094,7 +1103,7 @@ function exportCsv(S) {
       hub._bots.forEach((b) => {
         if (Math.random() > 0.3) return;
         const k = st + ":" + S.qi;
-        if (st === "lobby" && !S.warm[b.pid]) hub.act(b.pid, false, { type: "warm", text: warm[Math.floor(Math.random() * warm.length)] });
+        if (st === "lobby" && S.warm[b.pid] == null) hub.act(b.pid, false, { type: "warm", opt: Math.floor(Math.random() * CONTENT.warmOpts.length) });
         else if (st === "r1" && S.phase === "open") hub.act(b.pid, false, { type: "vote", opt: Math.random() < 0.45 ? 0 : Math.floor(Math.random() * 5) });
         else if ((st === "r2" || st === "r3") && S.phase === "open" && !(S.ans[k] || {})[b.pid]) {
           const qq = (st === "r2" ? CONTENT.r2 : CONTENT.r3).qs[S.qi]; hub.act(b.pid, false, { type: "answer", opt: Math.random() < 0.65 ? qq.a : Math.floor(Math.random() * qq.o.length) });
@@ -1111,7 +1120,7 @@ function exportCsv(S) {
   const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt", "wss://test.mosquitto.org:8081/"];
   function brokerList() {
     const b = new URLSearchParams(location.search).get("broker");
-    return b ? [b] : BROKERS;
+    return b ? b.split(",") : BROKERS;
   }
   function Mqtt(url, subs, h) {
     const enc = new TextEncoder(), dec = new TextDecoder();
@@ -1160,11 +1169,11 @@ function exportCsv(S) {
     }
     connect();
     return {
-      publish(topic, text, retain) {
+      publish(topic, text, retain, noQueue) {
         const t = strB(topic), pl = enc.encode(text);
         const u8 = pkt(0x30 | (retain ? 1 : 0), cat([t, pl]));
         if (alive && ws && ws.readyState === 1) return sendRaw(u8);
-        if (!retain) { queue.push(u8); if (queue.length > 30) queue.shift(); }
+        if (!retain && !noQueue) { queue.push(u8); if (queue.length > 30) queue.shift(); }
         return false;
       },
       isAlive: () => alive,
@@ -1176,23 +1185,53 @@ function exportCsv(S) {
 
   function relayTransport(code, pid) {
     const p = roomTopic(code), urls = brokerList();
-    let cb = () => {}, scb = () => {}, c = null, me = { joined: false }, tOff = 0, mq = null, idx = 0, timer = 0, gotC = false;
-    function emit() { if (c) cb({ c: Object.assign({}, c, { now: Date.now() + tOff }), me }); }
+    // c / me：目前採用的版本；舊的（過期的）保留訊息一律忽略，避免畫面跳回舊階段
+    let cb = () => {}, scb = () => {}, c = null, me = { joined: false }, tOff = 0, mq = null, idx = 0, timer = 0;
+    let gotC = false, gotMe = false, openedAt = 0, cAt = 0, lastT = 0, cE = 0, cV = -1, mE = 0, mV = -1, emitT = 0;
+    const newer = (e, v, curE, curV) => e == null || e > curE || (e === curE && (v == null || v >= curV));
+    function sane() { // 「我的作答」只在屬於目前題目時才有效（me 與 c 是分開送達的，可能差一拍）
+      if (!c) return me;
+      const k = c.stage + ":" + c.qi;
+      if (me.k === k || !me.joined) return me;
+      const m = Object.assign({}, me); m.pick = -1; m.pts = 0; return m;
+    }
+    function emit() {
+      if (!c || !lastT) return; // 必須先收到主持人「心跳」，才採信保留訊息（避免顯示過期畫面）
+      if (!gotMe && Date.now() - cAt < 3000) { clearTimeout(emitT); emitT = setTimeout(emit, 3050 - (Date.now() - cAt)); return; } // 等 me 到齊，避免先閃出「加入」畫面
+      cb({ c: Object.assign({}, c, { now: Date.now() + tOff }), me: sane() });
+    }
+    function status() {
+      const fresh = gotC && lastT > 0 && Date.now() - lastT < 9000;
+      scb(fresh ? "ok" : "bad", fresh ? "" : gotC ? "與主持人的連線不穩，正在重新連線…（畫面先保留目前內容）" : "已連上中繼站，等待主持人畫面…（請確認主持人頁面開著，且是掃 QR code 進來）");
+    }
     function open() {
       if (mq) mq.close();
-      gotC = false;
+      gotC = false; lastT = 0; openedAt = Date.now();
       mq = Mqtt(urls[idx % urls.length], [p + "/c", p + "/me/" + pid, p + "/t"], {
-        onStatus(st) { scb(st === "ok" && gotC ? "ok" : "bad", st === "ok" ? "已連上中繼站，等待主持人畫面…（請確認主持人頁面開著，且是掃 QR code 進來）" : "無法連上中繼站，正在重試或切換備援…"); if (st === "ok") { mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello" } }), false); } },
+        onStatus(st) { if (st === "ok") { mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello" } }), false); } else scb("bad", "無法連上中繼站，正在重試或切換備援…"); if (st === "ok") status(); },
         onMessage(topic, text, retain) {
-          if (topic === p + "/t") { try { tOff = JSON.parse(text).now - Date.now(); } catch (e) {} emit(); return; }
+          if (topic === p + "/t") { try { const t = JSON.parse(text); tOff = t.now - Date.now(); lastT = Date.now(); } catch (e) {} status(); emit(); return; }
           let o; try { o = JSON.parse(text); } catch (e) { return; }
-          if (topic === p + "/c") { c = o; if (!gotC) { gotC = true; scb("ok"); } emit(); }
-          else if (topic === p + "/me/" + pid) { me = o; emit(); }
+          if (topic === p + "/c") {
+            if (!newer(o.e, o.ver, cE, cV)) return; // 過期的保留訊息
+            cE = o.e == null ? cE : o.e; cV = o.ver; c = o;
+            if (!gotC) { gotC = true; cAt = Date.now(); }
+            status(); emit();
+          } else if (topic === p + "/me/" + pid) {
+            if (!newer(o.e, o.v, mE, mV)) return;
+            mE = o.e == null ? mE : o.e; mV = o.v == null ? mV : o.v; me = o; gotMe = true; emit();
+          }
         },
       });
       clearTimeout(timer);
-      timer = setTimeout(function watch() { if (!gotC) { idx++; open(); } else timer = setTimeout(watch, 8000); }, 7000);
+      timer = setTimeout(function watch() {
+        const now = Date.now();
+        if (!gotC && now - openedAt > 7000) { idx++; open(); return; }          // 這條線路沒有主持人資料 → 換線路
+        if (gotC && now - (lastT || cAt) > 12000) { idx++; open(); return; }              // 主持人心跳中斷（線路上沒有主持人）→ 換線路，畫面保留
+        status(); timer = setTimeout(watch, 3000);
+      }, 3000);
     }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && mq && gotC && Date.now() - (lastT || cAt) > 8000) open(); }); // 手機鎖屏回來
     return {
       pid, isHost: false, demo: false, relay: true,
       onView(f) { cb = f; }, onStatus(f) { scb = f; },
@@ -1204,32 +1243,34 @@ function exportCsv(S) {
 
   function startRelayHost(hub, code, key, diag) {
     const p = roomTopic(code), urls = brokerList().slice(0, 2), known = new Set();
-    const lastMe = {}; let lastC = "", dirty = true, mqs = [];
+    const lastMe = {}; let lastC = "", dirty = true, mqs = []; const epoch = Date.now();
     const HOST_TYPES = ["stage", "next", "reveal", "qstatus", "reset"];
     function onMsg(topic, text) {
       if (topic !== p + "/act") return;
       let m; try { m = JSON.parse(text); } catch (e) { return; }
       if (!m || !m.a || typeof m.pid !== "string") return;
       if (m.pid.length >= 6) known.add(m.pid);
-      if (m.a.type === "hello") { delete lastMe[m.pid]; dirty = true; return; }
+      if (m.a.type === "hello") { delete lastMe[m.pid]; dirty = true; beat(); return; }
       const isHost = m.k === key && HOST_TYPES.includes(m.a.type);
       if (HOST_TYPES.includes(m.a.type) && !isHost) return;
       hub.act(m.pid, isHost, m.a); dirty = true;
     }
+    let lastBeat = 0;
+    function beat() { const n = Date.now(); if (n - lastBeat < 400) return; lastBeat = n; mqs.forEach((q) => q.publish(p + "/t", JSON.stringify({ now: n }), false, true)); }
     function pubAll(topic, text) { mqs.forEach((q) => q.publish(topic, text, true)); }
     function flush(force) {
       const S = hub.S, now = Date.now();
-      const co = viewCommon(S, false, now); co.now = 0; const cs = JSON.stringify(co);
+      const co = viewCommon(S, false, now); co.now = 0; co.e = epoch; const cs = JSON.stringify(co);
       if (force || cs !== lastC) { pubAll(p + "/c", cs); lastC = cs; }
       Object.keys(S.players).forEach((pid) => known.add(pid));
-      known.forEach((pid) => { const ms = JSON.stringify(viewMe(S, pid)); if (force || lastMe[pid] !== ms) { pubAll(p + "/me/" + pid, ms); lastMe[pid] = ms; } });
+      known.forEach((pid) => { const m = viewMe(S, pid), ms = JSON.stringify(m); if (force || lastMe[pid] !== ms) { pubAll(p + "/me/" + pid, JSON.stringify(Object.assign({}, m, { e: epoch, v: S.ver }))); lastMe[pid] = ms; } });
     }
     const okSet = {};
     const report = () => { const n = Object.keys(okSet).filter((k) => okSet[k]).length; diag && diag(n > 0 ? "免伺服器模式：中繼站已連線（" + n + "/" + urls.length + "）。請保持此分頁開啟、電腦不要休眠；結束後請匯出紀錄。" : "無法連上中繼站（公用 MQTT）。請檢查這台電腦的網路／防火牆是否允許 wss 連線，系統會持續重試。", n > 0); };
     mqs = urls.map((u) => Mqtt(u, [p + "/act"], { onMessage: onMsg, onStatus(st) { okSet[u] = st === "ok"; report(); if (st === "ok") { lastC = ""; Object.keys(lastMe).forEach((k) => delete lastMe[k]); dirty = true; } } }));
     hub.listeners.push(() => { dirty = true; });
     setInterval(() => { if (dirty) { dirty = false; flush(false); } }, 250);
-    setInterval(() => { mqs.forEach((q) => q.publish(p + "/t", JSON.stringify({ now: Date.now() }), false)); }, 3000);
+    setInterval(beat, 2000);
     setInterval(() => flush(true), 30000);
   }
 
