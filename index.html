@@ -210,7 +210,7 @@ textarea.field{min-height:92px;resize:vertical}
 @media (max-width:900px){.lobby{grid-template-columns:1fr}.hopts{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-.hopt .tx .track.mini{height:12px;margin-top:.5vh;background:rgba(255,255,255,.14)}.hopt .tx .val{font-size:.6em;color:#b9dcd9;font-weight:700;margin-top:.1vh}.hopt .tx .mini.off,.hopt .tx .mini.off+.val{display:none}
+.hopt .tx .track.mini{height:12px;margin-top:.5vh;background:rgba(255,255,255,.14)}.hopt .tx .val{font-size:.6em;color:#b9dcd9;font-weight:700;margin-top:.1vh}.hopt .tx .track.mini2{height:6px;margin-top:.4vh;background:rgba(255,255,255,.1)}.hopt .tx .mini.off,.hopt .tx .mini2.off,.hopt .tx .mini2.off+.val{display:none}
 .hopts.one .hopt{font-size:clamp(15px,1.55vw,28px);padding:1vh 1.2vw}
 
 .qrcard .pub{display:flex;gap:6px;margin-top:8px}.qrcard .pub input{flex:1;min-width:0;border:2px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:.7em}.qrcard .pub button{margin:0;border:0;background:var(--teal);color:#fff;border-radius:8px;padding:6px 12px;text-decoration:none;font-weight:800;font-size:.7em}
@@ -472,6 +472,14 @@ function items(S) { return S.stage === "r2" ? CONTENT.r2.qs : S.stage === "r3" ?
 function keyOf(S) { return S.stage + ":" + S.qi; }
 function bump(S) { S.ver++; }
 
+function mergePlayer(S, from, to) {
+  S.players[to] = Object.assign({}, S.players[from]); delete S.players[from];
+  const mv = (m) => { if (m && Object.prototype.hasOwnProperty.call(m, from)) { if (!(to in m)) m[to] = m[from]; delete m[from]; } };
+  mv(S.warm); mv(S.r1); mv(S.picks);
+  Object.keys(S.ans).forEach((k) => mv(S.ans[k])); Object.keys(S.r4).forEach((k) => mv(S.r4[k]));
+  S.pledges.forEach((x) => { if (x.pid === from) x.pid = to; });
+  S.qs.forEach((x) => { if (x.pid === from) x.pid = to; x.votes = x.votes.map((v) => (v === from ? to : v)); });
+}
 function reveal(S, now) {
   if (S.phase !== "open") return false;
   if (S.stage === "r1") { S.phase = "revealed"; return true; }
@@ -520,14 +528,25 @@ function reduce(S, a, now, isHost) {
   const pid = clean(a.pid, 40);
   if (pid.length < 6) return { err: "bad pid" };
   if (t === "join") {
-    const name = clean(a.name, 12), role = roleKeys.includes(a.role) ? a.role : "o";
+    let name = clean(a.name, 12); const role = roleKeys.includes(a.role) ? a.role : "o";
     if (!name) return { err: "name" };
-    if (!P[pid]) { if (Object.keys(P).length >= 3000) return { err: "full" }; P[pid] = { name, role, at: now }; }
-    else { P[pid].name = name; P[pid].role = role; }
+    if (!P[pid]) {
+      if (Object.keys(P).length >= 3000) return { err: "full" };
+      // 同暱稱＋同職務：視為同一人換了瀏覽器或重新掃碼 → 接回原本的身分與分數，不另外多一個名字
+      const key = name.toLowerCase();
+      const old = Object.keys(P).find((k) => P[k].name.toLowerCase() === key && P[k].role === role);
+      if (old && now - (P[old].seen || P[old].at || 0) > 15000) { mergePlayer(S, old, pid); }
+      else {
+        if (old) { let n = 2; while (Object.keys(P).some((k) => P[k].name.toLowerCase() === (name + " " + n).toLowerCase())) n++; name = (name + " " + n).slice(0, 14); } // 兩個人同時在線且同名：加上編號以便區分
+        P[pid] = { name, role, at: now };
+      }
+    } else { P[pid].name = name; P[pid].role = role; }
+    P[pid].seen = now;
     bump(S); return { ok: 1 };
   }
   const me = P[pid];
   if (!me) return { err: "join first" };
+  me.seen = now;
   const num = (v, max) => { const n = parseInt(v, 10); return n >= 0 && n < max ? n : -1; };
   switch (t) {
     case "warm": {
@@ -641,12 +660,14 @@ function viewCommon(S, host, now) {
     const q = items(S)[S.qi], k = keyOf(S);
     c.q = { t: q.t, o: q.o, n: items(S).length };
     c.answered = Object.keys(S.ans[k] || {}).length;
-    if (shown) { c.q.a = q.a; c.q.x = q.x; c.dist = distOf(S.ans[k], q.o.length, S); }
+    c.dist = distOf(S.ans[k], q.o.length, S);
+    if (shown) { c.q.a = q.a; c.q.x = q.x; }
   } else if (st === "r4" && S.qi >= 0) {
     const q = items(S)[S.qi], k = keyOf(S);
     c.q = { t: q.t, o: q.o, n: items(S).length, who: q.who };
     c.answered = Object.keys(S.r4[k] || {}).length;
-    if (shown) { c.q.a = q.a; c.q.x = q.x; c.dist = distOf(S.r4[k], q.o.length, S); }
+    c.dist = distOf(S.r4[k], q.o.length, S);
+    if (shown) { c.q.a = q.a; c.q.x = q.x; }
   } else if (st === "r5") {
     const pk = S.picks || {}, dist = CONTENT.r5.opts.map(() => 0); let people = 0, total = 0;
     Object.keys(pk).forEach((pid) => { if (pk[pid].length) { people++; total += pk[pid].length; pk[pid].forEach((o) => { if (dist[o] != null) dist[o]++; }); } });
@@ -742,13 +763,13 @@ function exportCsv(S) {
       '<div class="track mini">' + roleKeys.map((k) => '<span class="' + k + '" id="' + prefix + i + k + '"></span>').join("") + "</div>" +
       '<div class="val" id="' + prefix + "v" + i + '"></div></div>').join("") + "</div>";
   }
-  function barFill(prefix, dist) {
+  function barFill(prefix, dist, mark, markText) {
     const total = dist.reduce((a, d) => a + d.all, 0);
     dist.forEach((d, i) => {
       const pct = total ? (d.all / total) * 100 : 0;
       const a = $(prefix + i + "a"); if (a) a.style.width = pct + "%";
       roleKeys.forEach((k) => { const e = $(prefix + i + k); if (e) e.style.width = (total ? (d[k] / total) * 100 : 0) + "%"; });
-      const v = $(prefix + "v" + i); if (v) v.textContent = d.all + " 人（" + Math.round(pct) + "%）";
+      const v = $(prefix + "v" + i); if (v) v.textContent = d.all + " 人（" + Math.round(pct) + "%）" + (mark === i ? "　" + (markText || "✓") : "");
     });
   }
   function stackFill(prefix, dist, mark) {
@@ -897,12 +918,13 @@ function exportCsv(S) {
           if (st === "r4") return { sig: st + "done", frame: '<div class="wait card"><h2>本輪完成</h2><p class="mute">謝謝大家的選擇，請看大螢幕的討論。</p></div>', fill() {} };
           return { sig: st + "done", frame: '<div class="card"><p class="kick">排行榜</p><h2>目前前十名</h2><ol class="board" id="bd"></ol></div><div class="card" id="mine"></div>', fill() { renderBoard(q("#bd"), c.top || []); q("#mine").innerHTML = me.rank ? "你的名次：<b>第 " + me.rank + " 名</b>，累計 <b>" + me.score + "</b> 分" : "本輪尚無積分"; } };
         }
-        const open = c.phase === "open", qd = c.q;
+        const open = c.phase === "open", qd = c.q, see = !open || me.pick >= 0;
         return {
-          sig: st + c.qi + (open ? "o" : "r"),
+          sig: st + c.qi + (open ? "o" : "r") + see,
           frame: '<div class="card"><p class="kick">' + esc(STAGES.find((s) => s.id === st).short + " · 第 " + (c.qi + 1) + " / " + qd.n + " 題") + (qd.who ? " · " + esc(qd.who) : "") + "</p>" +
             (isQuizStage(st) && open ? '<div class="timer" id="tm"><i id="tb"></i></div>' : "") +
-            "<h2>" + esc(qd.t) + "</h2>" + optsFrame(qd.o) + '</div><div id="fb"></div>',
+            "<h2>" + esc(qd.t) + "</h2>" + optsFrame(qd.o) + '</div><div id="fb"></div>' +
+            (see ? '<div class="card"><h2>' + (open ? "目前全場選擇（即時更新）" : "全場選擇") + "</h2>" + barFrame("qs", qd.o.map((t, i) => LTR[i] + "　" + t)) + legend() + "</div>" : ""),
           fill() {
             qd.o.forEach((_, i) => {
               const b = q("#o" + i); if (!b) return;
@@ -916,14 +938,14 @@ function exportCsv(S) {
                 b.classList.toggle("dim", i !== qd.a && me.pick !== i);
               }
             });
+            if (see && c.dist) barFill("qs", c.dist, open ? -1 : qd.a, st === "r4" ? "★ 較建議" : "✓ 正解");
             const fb = q("#fb"); if (!fb) return;
             if (open) { fb.innerHTML = me.pick >= 0 ? '<div class="fb">已送出' + (st === "r4" ? "，可在揭曉前更改" : "，等待揭曉") + "。</div>" : ""; return; }
             if (isQuizStage(st)) {
               const right = me.pick === qd.a;
               fb.innerHTML = '<div class="fb ' + (right ? "good" : "bad") + '"><b>' + (me.pick < 0 ? "這題沒有作答" : right ? "答對了！+" + me.pts + " 分" : "再想想～") + "</b>" + esc(qd.x) + (me.rank ? '<p class="mute" style="margin-top:8px">目前第 ' + me.rank + " 名，累計 " + me.score + " 分</p>" : "") + "</div>";
             } else {
-              fb.innerHTML = '<div class="fb"><b>較建議的回應：' + LTR[qd.a] + "</b>" + esc(qd.x) + '</div><div class="card"><h2>全場選擇</h2>' + stackFrame("r4", qd.o.map((_, i) => "選項 " + LTR[i])) + legend() + "</div>";
-              if (c.dist) stackFill("r4", c.dist, qd.a);
+              fb.innerHTML = '<div class="fb"><b>較建議的回應：' + LTR[qd.a] + "</b>" + esc(qd.x) + "</div>";
             }
           },
         };
@@ -1077,7 +1099,7 @@ function exportCsv(S) {
       const sw = q("#swurl"); if (sw) sw.hidden = info.urls.length < 2;
     }
 
-    function optsHtml(qd, cls, mini) { return '<div class="hopts' + (cls || "") + '">' + qd.o.map((t, i) => '<div class="hopt" id="h' + i + '"><span class="ltr">' + LTR[i] + '</span><span class="tx">' + esc(t) + (mini ? '<div class="track mini off" id="m' + i + '">' + roleKeys.map((k) => '<span class="' + k + '" id="h4' + i + k + '"></span>').join("") + '</div><div class="val" id="h4v' + i + '"></div>' : "") + '</span><span class="cnt" id="hc' + i + '"></span></div>').join("") + "</div>"; }
+    function optsHtml(qd, cls, mini) { return '<div class="hopts' + (cls || "") + '">' + qd.o.map((t, i) => '<div class="hopt" id="h' + i + '"><span class="ltr">' + LTR[i] + '</span><span class="tx">' + esc(t) + (mini ? '<div class="track mini off" id="m' + i + '"><span class="all" id="h4' + i + 'a"></span></div><div class="track mini2 off" id="n' + i + '">' + roleKeys.map((k) => '<span class="' + k + '" id="h4' + i + k + '"></span>').join("") + '</div><div class="val" id="h4v' + i + '"></div>' : "") + '</span><span class="cnt" id="hc' + i + '"></span></div>').join("") + "</div>"; }
     function topHtml(k, t, sub) { return '<div><div class="h-kick">' + esc(k) + '</div><h1 class="h-title">' + t + "</h1>" + (sub ? '<div class="h-sub">' + sub + "</div>" : "") + "</div>"; }
 
     function screen() {
@@ -1115,16 +1137,16 @@ function exportCsv(S) {
         return {
           sig: st + c.qi + (open ? "o" : "r"),
           frame: '<div class="hrow"><div style="flex:1">' + topHtml(sh.short + " · 第 " + (c.qi + 1) + " / " + qd.n + " 題" + (qd.who ? " · " + qd.who : ""), esc(qd.t)) + "</div>" + (open && isQuizStage(st) ? '<div class="tnum" id="tn">20</div>' : "") + "</div>" +
-            (open && isQuizStage(st) ? '<div class="htimer" id="ht"><i id="hi"></i></div>' : "") + optsHtml(qd, st === "r4" ? " one" : "", st === "r4") + '<div class="hans" id="hans"></div><div id="hx"></div>',
+            (open && isQuizStage(st) ? '<div class="htimer" id="ht"><i id="hi"></i></div>' : "") + optsHtml(qd, st === "r4" ? " one" : "", true) + '<div class="hans" id="hans"></div><div id="hx"></div>',
           fill() {
             q("#hans").textContent = open ? "已作答 " + c.answered + " / " + c.count + " 人" : "";
             if (!open) {
-              qd.o.forEach((_, i) => { const e = q("#h" + i); e.classList.toggle("ok", i === qd.a); e.classList.toggle("best", st === "r4" && i === qd.a); e.classList.toggle("dim", i !== qd.a && st !== "r4"); if (c.dist && isQuizStage(st)) q("#hc" + i).textContent = c.dist[i].all + " 人"; });
+              qd.o.forEach((_, i) => { const e = q("#h" + i); e.classList.toggle("ok", i === qd.a); e.classList.toggle("best", st === "r4" && i === qd.a); e.classList.toggle("dim", i !== qd.a && st !== "r4"); });
               if (!q("#hx").innerHTML) {
                 if (st === "r4") q("#hx").innerHTML = '<div class="expl"><b>為什麼較建議 ' + LTR[qd.a] + "？</b> " + esc(qd.x) + '</div><div class="hlegend">' + ROLES.map((r) => '<span><i style="background:' + r.c + '"></i>' + r.n + "</span>").join("") + "</div>";
                 else q("#hx").innerHTML = '<div class="expl"><b>解析：</b>' + esc(qd.x) + '</div><div id="top3" class="hlegend"></div>';
               }
-              if (st === "r4" && c.dist) { qd.o.forEach((_, i) => q("#m" + i).classList.remove("off")); stackFill("h4", c.dist, qd.a); }
+              if (c.dist) { qd.o.forEach((_, i) => { q("#m" + i).classList.remove("off"); q("#n" + i).classList.remove("off"); }); barFill("h4", c.dist, qd.a, st === "r4" ? "★ 較建議" : "✓ 正解"); }
               const t3 = q("#top3"); if (t3 && c.top) t3.innerHTML = "<span>目前前三名：</span>" + c.top.slice(0, 3).map((p, i) => "<span><b>" + (i + 1) + ". " + esc(p.name) + "</b> " + p.score + " 分</span>").join("");
             }
           },
