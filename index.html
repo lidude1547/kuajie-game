@@ -397,6 +397,9 @@ const CONTENT = {
       { t: "報告寫：「情緒調節困難」。哪一句描述最完整、可以直接討論策略？",
         o: ["他情緒很大", "換活動時會尖叫、趴在地上；事先預告「再兩分鐘」時較少發生", "他需要行為治療", "他是被寵壞的"], a: 1,
         x: "描述包含「什麼時候發生、什麼時候比較少」，策略就跑出來了：預告、視覺時間表。其他選項是評價或標籤。" },
+      { t: "助理人員在紀錄上寫「今天他很配合」。改成哪一句，最能幫團隊決定要不要退提示？",
+        o: ["今天表現很好，很乖", "他今天心情不錯", "他越來越進步了", "點心前洗手 5 次機會中，4 次看圖卡就自己開始，1 次需要手扶"], a: 3,
+        x: "有「情境、提示層級、次數」，團隊才知道下一步能不能從手扶退到圖卡、再退到環境提示。" },
     ],
   },
   r3: {
@@ -415,6 +418,9 @@ const CONTENT = {
       { t: "目標：「與同儕共玩、輪流」。下列哪一種安排最有機會達成？",
         o: ["抽離到另一間教室一對一練習", "看繪本團體討論", "午睡前安靜活動", "角落借積木、戶外輪流盪鞦韆這類有同伴的活動"], a: 3,
         x: "共玩需要同儕在場，熱門教具與鞦韆天然就有等待和輪流。抽離教學很難練到與同伴的互動。" },
+      { t: "目標：遇到困難時說或比「幫我」。最自然的練習時機是？",
+        o: ["團討聽故事時", "點心時打不開餐盒、角落拿不到高處的材料", "午睡時間", "老師示範新教具時"], a: 1,
+        x: "真的需要幫忙的那一刻，就是最好的教學時機。先等 5 秒、再示範「幫我」，孩子說了就立刻幫。" },
     ],
   },
   r4: {
@@ -429,6 +435,15 @@ const CONTENT = {
       { who: "導師 ⇄ 助理人員", t: "助理人員習慣直接幫孩子把作品貼完，導師希望孩子自己做。導師最適合怎麼處理？",
         o: ["當場說：「你不要幫他做！」", "直接向園長反映助理不照規矩", "事後私下說：「我看到作品是你幫忙貼完的，我猜你是想讓他有成就感。IEP 這學期想練『自己貼』，我們約好哪一步由你協助，好嗎？」", "默默自己接手，不再讓助理參與"], a: 2,
         x: "私下、先描述、說出善意的猜測，再回到 IEP 的共同目標並一起約定。避免在孩子面前糾正，也別把問題丟給第三人。" },
+      { who: "老師 ⇄ 家長", t: "家長說：「我不同意鑑定，我怕他被貼標籤。」老師最適合怎麼回應？",
+        o: ["「不鑑定就沒有巡輔，您要想清楚。」", "「好，那我們就當作沒這回事。」", "「其他家長都同意了。」", "「尊重您的顧慮，班上的支持不會中斷。依規定園所需要通報，我先跟您說明接下來怎麼走、資料誰看得到。」"], a: 3,
+        x: "先接住擔心，再把流程與資料使用說清楚；不威脅、不隱瞞，也不承諾做不到的事。家長不同意時，幼兒園依法仍須通報。" },
+      { who: "巡輔 ⇄ 教保員", t: "小晴換活動時尖叫、推倒椅子。事後帶班老師很沮喪：「我是不是很不會帶？」巡輔老師最適合怎麼回應？",
+        o: ["「先喘口氣，你今天把大家都顧安全了。我們一起看看前後發生了什麼，找出下次可以先預告的地方。」", "「下次要更早處理。」", "「她本來就比較難帶。」", "「我去跟主任說一下。」"], a: 0,
+        x: "危機之後先照顧人，再一起回看前事、行為、後果。檢討的是支持方式，不是老師的能力。" },
+      { who: "主任 ⇄ 治療師", t: "治療師想看孩子在班上的影片來調整建議。主任最適合怎麼處理？",
+        o: ["請老師把整段班級影片用 LINE 傳過去", "拒絕，醫療的事不歸園所管", "先取得家長同意，只錄必要片段、避開其他孩子，用安全的方式傳", "請老師用自己的手機私下傳"], a: 2,
+        x: "合作很好，但要守住個資：先同意、只給必要的、避開他人、安全傳送。" },
     ],
   },
   pledgeHint: "下週回到班上，我會……",
@@ -1188,7 +1203,8 @@ function exportCsv(S) {
 
 
   /* ====================== 免伺服器模式：經公用 MQTT 中繼站（WebSocket） ====================== */
-  const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt", "wss://test.mosquitto.org:8081/"];
+  // 2026-11 壓力測試：50 人同時湧入時 emqx 公用站會丟棄主持人的部分訊息，hivemq 全數送達，故 hivemq 排第一
+  const BROKERS = ["wss://broker.hivemq.com:8884/mqtt", "wss://broker.emqx.io:8084/mqtt", "wss://test.mosquitto.org:8081/"];
   function brokerList() {
     const b = new URLSearchParams(location.search).get("broker");
     return b ? b.split(",") : BROKERS;
@@ -1258,7 +1274,18 @@ function exportCsv(S) {
     const p = roomTopic(code), urls = brokerList();
     // c / me：目前採用的版本；舊的（過期的）保留訊息一律忽略，避免畫面跳回舊階段
     let cb = () => {}, scb = () => {}, c = null, me = { joined: false }, tOff = 0, mq = null, idx = 0, timer = 0;
-    let gotC = false, gotMe = false, openedAt = 0, cAt = 0, lastT = 0, cE = 0, cV = -1, mE = 0, mV = -1, emitT = 0;
+    let gotC = false, gotMe = false, openedAt = 0, cAt = 0, lastT = 0, cE = 0, cV = -1, mE = 0, mV = -1, emitT = 0, hostV = -1, hostE = 0, joinA = null, joinAt = 0, staleSince = 0, lastHello = 0;
+    function heal() { // 個人畫面遲遲沒更新（訊息可能在中繼站遺失）→ 請主持人重送；必要時重送加入
+      if (!mq || !gotC || !c) return;
+      const now = Date.now(), k = c.stage + ":" + c.qi;
+      const stale = (joinA && !me.joined && now - joinAt > 4000) || (me.joined && me.k !== k) || (hostE === cE && hostV > cV); // 漏收共同畫面或個人畫面
+      if (!stale) { staleSince = 0; return; }
+      if (!staleSince) { staleSince = now; return; }
+      if (now - staleSince < 3500 || now - lastHello < 4000) return;
+      lastHello = now;
+      mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello" } }), false);
+      if (joinA && !me.joined) mq.publish(p + "/act", JSON.stringify({ pid, a: joinA }), false);
+    }
     const newer = (e, v, curE, curV) => e == null || e > curE || (e === curE && (v == null || v >= curV));
     function sane() { // 「我的作答」只在屬於目前題目時才有效（me 與 c 是分開送達的，可能差一拍）
       if (!c) return me;
@@ -1281,7 +1308,7 @@ function exportCsv(S) {
       mq = Mqtt(urls[idx % urls.length], [p + "/c", p + "/me/" + pid, p + "/t"], {
         onStatus(st) { if (st === "ok") { mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello" } }), false); } else scb("bad", "無法連上中繼站，正在重試或切換備援…"); if (st === "ok") status(); },
         onMessage(topic, text, retain) {
-          if (topic === p + "/t") { try { const t = JSON.parse(text); tOff = t.now - Date.now(); lastT = Date.now(); } catch (e) {} status(); emit(); return; }
+          if (topic === p + "/t") { try { const t = JSON.parse(text); tOff = t.now - Date.now(); lastT = Date.now(); if (t.v != null) { hostV = t.v; hostE = t.e; } } catch (e) {} status(); emit(); return; }
           let o; try { o = JSON.parse(text); } catch (e) { return; }
           if (topic === p + "/c") {
             if (!newer(o.e, o.ver, cE, cV)) return; // 過期的保留訊息
@@ -1299,15 +1326,15 @@ function exportCsv(S) {
         const now = Date.now();
         if (!gotC && now - openedAt > 7000) { idx++; open(); return; }          // 這條線路沒有主持人資料 → 換線路
         if (gotC && now - (lastT || cAt) > 12000) { idx++; open(); return; }              // 主持人心跳中斷（線路上沒有主持人）→ 換線路，畫面保留
-        status(); timer = setTimeout(watch, 3000);
-      }, 3000);
+        status(); heal(); timer = setTimeout(watch, 1500);
+      }, 1500);
     }
     document.addEventListener("visibilitychange", () => { if (!document.hidden && mq && gotC && Date.now() - (lastT || cAt) > 8000) open(); }); // 手機鎖屏回來
     return {
       pid, isHost: false, demo: false, relay: true,
       onView(f) { cb = f; }, onStatus(f) { scb = f; },
       start() { open(); },
-      send(a) { mq && mq.publish(p + "/act", JSON.stringify({ pid, a }), false); return Promise.resolve({ ok: 1 }); },
+      send(a) { if (a && a.type === "join") { joinA = a; joinAt = Date.now(); } mq && mq.publish(p + "/act", JSON.stringify({ pid, a }), false); return Promise.resolve({ ok: 1 }); },
       info() { return Promise.resolve({ urls: [] }); }, csv() { return Promise.resolve(""); },
     };
   }
@@ -1321,26 +1348,30 @@ function exportCsv(S) {
       let m; try { m = JSON.parse(text); } catch (e) { return; }
       if (!m || !m.a || typeof m.pid !== "string") return;
       if (m.pid.length >= 6) known.add(m.pid);
-      if (m.a.type === "hello") { delete lastMe[m.pid]; dirty = true; beat(); return; }
+      if (m.a.type === "hello") { delete lastMe[m.pid]; lastC = ""; dirty = true; beat(); return; } // hello＝觀眾覺得資料不完整：共同畫面與個人畫面都重送
       const isHost = m.k === key && HOST_TYPES.includes(m.a.type);
       if (HOST_TYPES.includes(m.a.type) && !isHost) return;
       hub.act(m.pid, isHost, m.a); dirty = true;
     }
     let lastBeat = 0;
-    function beat() { const n = Date.now(); if (n - lastBeat < 400) return; lastBeat = n; mqs.forEach((q) => q.publish(p + "/t", JSON.stringify({ now: n }), false, true)); }
+    function beat() { const n = Date.now(); if (n - lastBeat < 400) return; lastBeat = n; mqs.forEach((q) => q.publish(p + "/t", JSON.stringify({ now: n, v: hub.S.ver, e: epoch }), false, true)); } // 心跳附上目前版本，觀眾可自行察覺漏收
     function pubAll(topic, text) { mqs.forEach((q) => q.publish(topic, text, true)); }
     function flush(force) {
       const S = hub.S, now = Date.now();
       const co = viewCommon(S, false, now); co.now = 0; co.e = epoch; const cs = JSON.stringify(co);
       if (force || cs !== lastC) { pubAll(p + "/c", cs); lastC = cs; }
       Object.keys(S.players).forEach((pid) => known.add(pid));
-      known.forEach((pid) => { const m = viewMe(S, pid), ms = JSON.stringify(m); if (force || lastMe[pid] !== ms) { pubAll(p + "/me/" + pid, JSON.stringify(Object.assign({}, m, { e: epoch, v: S.ver }))); lastMe[pid] = ms; } });
+      known.forEach((pid) => { const m = viewMe(S, pid), ms = JSON.stringify(m); if (force || lastMe[pid] !== ms) { outbox.set(pid, JSON.stringify(Object.assign({}, m, { e: epoch, v: S.ver }))); lastMe[pid] = ms; } });
     }
+    // 個人畫面分批送出（每 100ms 最多 6 則），避免公用中繼站因瞬間大量訊息而丟棄
+    const outbox = new Map();
+    function drain() { let n = 0; for (const [pid, txt] of outbox) { if (n++ >= 6) break; pubAll(p + "/me/" + pid, txt); outbox.delete(pid); } }
     const okSet = {};
     const report = () => { const n = Object.keys(okSet).filter((k) => okSet[k]).length; diag && diag(n > 0 ? "免伺服器模式：中繼站已連線（" + n + "/" + urls.length + "）。請保持此分頁開啟、電腦不要休眠；結束後請匯出紀錄。" : "無法連上中繼站（公用 MQTT）。請檢查這台電腦的網路／防火牆是否允許 wss 連線，系統會持續重試。", n > 0); };
     mqs = urls.map((u) => Mqtt(u, [p + "/act"], { onMessage: onMsg, onStatus(st) { okSet[u] = st === "ok"; report(); if (st === "ok") { lastC = ""; Object.keys(lastMe).forEach((k) => delete lastMe[k]); dirty = true; } } }));
     hub.listeners.push(() => { dirty = true; });
     ticker(() => { if (dirty) { dirty = false; flush(false); } }, 250);
+    ticker(drain, 100);
     ticker(beat, 2000);
     ticker(() => flush(true), 30000);
     let wl = null; const keepAwake = () => { try { if (navigator.wakeLock && !document.hidden) navigator.wakeLock.request("screen").then((l) => { wl = l; }).catch(() => {}); } catch (e) {} };
