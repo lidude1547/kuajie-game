@@ -9,7 +9,7 @@
   --deep:#0B4F5C;--deep2:#093C47;--ink:#22313A;--mist:#EEF5F4;--card:#fff;--line:#D5E3E1;--mute:#5B6B73;
   --teal:#0E7C7B;--amber:#F2A541;--coral:#E4572E;--plum:#6C5B7B;--slate:#5B6B73;--good:#1B8F5A;--bad:#C2410C;
   --o0:#0E7C7B;--o1:#D98A12;--o2:#E4572E;--o3:#6C5B7B;--o4:#5B6B73;
-  --rt:#0E7C7B;--rp:#F2A541;--rs:#E4572E;--ro:#8A7C99;
+  --rt:#0E7C7B;--rp:#3A7CA5;--rs:#E4572E;--ro:#8A7C99;--bar:#F2A541;
   --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 *{box-sizing:border-box}
@@ -27,7 +27,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px soli
 .pl-me{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute);min-width:0}
 .pl-me b{color:var(--ink);max-width:7em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
-.chip.t{background:var(--rt)}.chip.p{background:#D98A12}.chip.s{background:var(--rs)}.chip.o{background:var(--ro)}
+.chip.t{background:var(--rt)}.chip.p{background:#2F6C93}.chip.s{background:var(--rs)}.chip.o{background:var(--ro)}
 .conn{background:var(--coral);color:#fff;text-align:center;padding:6px;font-size:13px;flex:none}
 .pl-main{flex:1;overflow:auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));-webkit-overflow-scrolling:touch}
 .tabs{display:flex;background:#fff;border-top:1px solid var(--line);flex:none;padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -77,6 +77,8 @@ textarea.field{min-height:92px;resize:vertical}
 .track span{height:100%;width:0;transition:width .5s ease}
 .track .t{background:var(--rt)}.track .p{background:var(--rp)}.track .s{background:var(--rs)}.track .o{background:var(--ro)}
 .srow .val{font-size:13px;color:var(--mute);margin-top:2px}
+.track .all{background:var(--bar)}.track.mini{height:8px;margin-top:4px}
+.hstack .srow .track.mini{grid-column:1/3;grid-row:3;height:clamp(8px,1.1vh,14px);margin-top:.5vh}
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--mute);margin-top:8px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 .qitem{background:#fff;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:flex-start}
@@ -358,7 +360,7 @@ const QR = (function () {
 /* ---------- 跨界溝通大挑戰：內容與遊戲引擎（純邏輯，伺服器與瀏覽器共用） ---------- */
 const ROLES = [
   { k: "t", n: "教保員／導師", c: "#0E7C7B" },
-  { k: "p", n: "助理人員", c: "#F2A541" },
+  { k: "p", n: "助理人員", c: "#3A7CA5" },
   { k: "s", n: "巡輔／特教", c: "#E4572E" },
   { k: "o", n: "行政／其他", c: "#6C5B7B" },
 ];
@@ -375,7 +377,7 @@ const STAGES = [
 const CONTENT = {
   r1: {
     q: "在你的工作裡，哪一段關係最難「說得通」？",
-    hint: "單選，講者揭曉後會看到四種職務各自的分布。",
+    hint: "單選。投票後就能看到全場的即時比例。",
     opts: ["班上老師 ↔ 家長", "班上老師 ↔ 巡輔老師", "老師 ↔ 治療師／醫療端", "老師 ↔ 助理人員", "第一線 ↔ 園所行政"],
   },
   r2: {
@@ -383,23 +385,23 @@ const CONTENT = {
     intro: "專業說法 → 教室看得到的行為。選出最像「錄影機拍得到」的描述。",
     qs: [
       { t: "評估報告寫：「感覺調節困難」。哪一句最像老師在班上「看得到」的樣子？",
-        o: ["他的感覺系統有問題", "他很敏感，需要特別照顧", "排隊被碰到會大叫並離開隊伍；點心時不願碰黏黏的材料", "他需要做感覺統合治療"], a: 2,
-        x: "好的翻譯要說出「誰、在哪、做了什麼」。其他選項是推論、評價或處置建議，錄影機拍不到，也容易讓家長覺得被貼標籤。" },
+        o: ["排隊時被碰到會覺得不舒服，所以他很不喜歡團體活動", "排隊被碰到會大叫並離開隊伍；點心時不碰黏的材料", "他觸覺特別敏感，建議每天安排感覺統合活動", "他排隊時常常情緒失控，需要老師一直安撫"], a: 1,
+        x: "只有 B 是錄影機拍得到的「動作＋情境」。A 把「不舒服、不喜歡」當事實，C 是處置建議，D 用「失控」這種評價詞。" },
       { t: "報告寫：「注意力不足」。哪一句是班上可觀察的描述？",
-        o: ["他上課都不專心", "他有過動的傾向", "他很容易分心，我帶得很累", "團體討論約半分鐘後離座；操作喜歡的積木能坐 10 分鐘以上"], a: 3,
-        x: "同一個孩子在不同情境差很多，這本身就是重要線索。寫出情境與時間，才能討論「怎麼調整」，而不是「他怎麼了」。" },
+        o: ["團討時容易分心，大概是對故事內容沒興趣", "他很難專心，坐不住的情況在團體時最嚴重", "團討約半分鐘就離座；操作喜歡的積木能坐十分鐘", "他應該是過動吧，團討時要請助理一直坐在他旁邊"], a: 2,
+        x: "C 寫出情境和時間，還看到「操作時坐得住」這個線索。A 是猜原因，B 用「很難專心」概括，D 直接貼標籤又給處方。" },
       { t: "報告寫：「語言表達遲緩」。哪一句最適合跟家長描述孩子在班上的樣子？",
-        o: ["想要東西時會拉大人的手或哭，還不會說「我要」", "他的口語發展落後同齡孩子", "他不太會講話", "在家可能沒有多跟他說話"], a: 0,
-        x: "先說孩子「用什麼方式表達」，再談可以教的替代方式（手勢、圖卡）。第四個選項暗示責怪家長，請避免。" },
+        o: ["他的口語發展明顯落後同齡孩子，最好盡快去評估", "他不太愛講話，可能家裡跟他說話比較少", "他聽得懂但不想說，個性比較害羞內向", "想要東西時會拉大人的手或哭，還不會說「我要」"], a: 3,
+        x: "D 說的是孩子「用什麼方式表達」，接下來就能談圖卡、手勢。A 是比較加建議，B 暗示責怪家長，C 是猜個性。" },
       { t: "收玩具時，小安坐在地上不動。下列哪一筆是「可檢查」的觀察紀錄？",
-        o: ["他很固執、愛哭、不受控", "老師指「收玩具→洗手」圖卡後，5 次機會中 3 次在 80 秒內開始收", "今天狀況不好，可能沒睡飽", "他不喜歡收玩具"], a: 1,
-        x: "好的紀錄＝情境＋給了什麼支持＋做了什麼＋幾次做到。有次數，兩週後才比得出有沒有進步。" },
+        o: ["指圖卡等 5 秒，5 次中 3 次在 80 秒內開始收", "收拾時他不太配合，提醒很多次以後才慢慢開始收", "他很不喜歡收玩具，每次都要拖到最後才願意收", "今天收拾的狀況比昨天好一點，看起來有慢慢在進步"], a: 0,
+        x: "好的紀錄＝情境＋給了什麼支持＋做了什麼＋幾次做到。B「很多次」數不出來，C 是猜喜好，D「好一點」兩週後沒辦法比較。" },
       { t: "報告寫：「情緒調節困難」。哪一句描述最完整、可以直接討論策略？",
-        o: ["他情緒很大", "換活動時會尖叫、趴在地上；事先預告「再兩分鐘」時較少發生", "他需要行為治療", "他是被寵壞的"], a: 1,
-        x: "描述包含「什麼時候發生、什麼時候比較少」，策略就跑出來了：預告、視覺時間表。其他選項是評價或標籤。" },
+        o: ["換活動時情緒很大，可能是在家裡太常被順著了", "他的情緒調節能力比較弱，需要轉介做行為治療", "換活動時尖叫趴地；先預告「再兩分鐘」較少發生", "換活動時常常鬧脾氣，要等老師安撫很久才會好轉"], a: 2,
+        x: "C 同時寫出「什麼時候發生」和「什麼時候比較少」，策略就出來了：預告、視覺時間表。A 責怪家庭，B 是標籤加處置，D 的「鬧脾氣」是評價。" },
       { t: "助理人員在紀錄上寫「今天他很配合」。改成哪一句，最能幫團隊決定要不要退提示？",
-        o: ["今天表現很好，很乖", "他今天心情不錯", "他越來越進步了", "點心前洗手 5 次機會中，4 次看圖卡就自己開始，1 次需要手扶"], a: 3,
-        x: "有「情境、提示層級、次數」，團隊才知道下一步能不能從手扶退到圖卡、再退到環境提示。" },
+        o: ["今天點心前洗手的表現很好，幾乎都是自己完成", "洗手 5 次中 4 次看圖卡就開始，1 次要手扶", "他今天心情不錯，所以洗手的時候比較願意配合", "洗手越來越進步了，下週開始就可以不用再協助"], a: 1,
+        x: "B 有「次數」和「提示層級」，團隊才知道能不能從手扶退到圖卡。A「幾乎」數不出來，C 是猜原因，D 自己就決定撤掉協助。" },
     ],
   },
   r3: {
@@ -407,43 +409,43 @@ const CONTENT = {
     intro: "IEP 目標 → 最適合「嵌入」的作息時機。目標放進本來就要做的活動，不另外加課。",
     qs: [
       { t: "目標：用手勢或圖卡「表達想要的東西」。最自然的練習時機是？",
-        o: ["團體討論時間", "午休時間", "點心時間（要吃什麼、要多一點）", "離園整隊"], a: 2,
-        x: "點心時間孩子有真實的需求與動機，表達「我要」立刻得到回饋，比另外練習更容易類化。" },
-      { t: "目標：「看提示換活動」（不卡在轉換）。最適合嵌入哪裡？",
-        o: ["角落時間結束前 2 分鐘預告、指「收玩具→洗手」圖卡", "另外找時間一對一練習看圖卡", "午睡時間", "等他自己想收再說"], a: 0,
-        x: "轉換本來每天就要發生好幾次。在真實的轉換點給預告與圖卡，練習次數最多，也最貼近孩子真正卡住的地方。" },
-      { t: "目標：完成「兩步驟指令」。最適合嵌入哪裡？",
-        o: ["收拾時間：「把積木放進籃子，再去洗手」", "聽故事時間", "自由探索時間", "晨間問候"], a: 0,
-        x: "收拾與盥洗是每天重複、有明確結果的兩步驟活動，重複次數多、情境自然。" },
+        o: ["團討時請他用圖卡回答老師的提問", "點心時選要吃什麼、要不要再多一點", "午休前請他用圖卡選想聽的音樂", "離園整隊時請他指出要找哪位家人"], a: 1,
+        x: "點心每天都有、孩子真的想要，表達之後馬上得到東西，練習次數最多也最容易類化。其他時機一天只出現一次，動機也比較弱。" },
+      { t: "目標：「看提示換活動」，不卡在轉換。最適合怎麼嵌入？",
+        o: ["另外找時間一對一，帶他練習看懂圖卡的步驟", "等他玩夠了自己願意收，再進行下一個活動", "角落結束前 2 分鐘預告，並指收玩具圖卡", "轉換時請助理直接牽他，把他帶到下一個活動"], a: 2,
+        x: "在真實的轉換點練，練習次數最多，也正好是他卡住的地方。A 離開了真實情境，B 沒有教，D 是替他完成。" },
+      { t: "目標：完成「兩步驟指令」。哪一個安排最容易天天練到？",
+        o: ["聽故事時請他先翻頁、再指出主角", "自由探索時給他一個兩步驟的新任務", "晨間問候時請他先揮手、再說早安", "收拾時「積木放進籃子，再去洗手」"], a: 3,
+        x: "收拾和洗手每天重複好幾次，做完有明確的結果。其他選項也是兩步驟，但一天只出現一次，或是額外加出來的任務。" },
       { t: "目標：「與同儕共玩、輪流」。下列哪一種安排最有機會達成？",
-        o: ["抽離到另一間教室一對一練習", "看繪本團體討論", "午睡前安靜活動", "角落借積木、戶外輪流盪鞦韆這類有同伴的活動"], a: 3,
-        x: "共玩需要同儕在場，熱門教具與鞦韆天然就有等待和輪流。抽離教學很難練到與同伴的互動。" },
+        o: ["角落借積木、戶外輪流盪鞦韆", "抽離到資源教室和老師一對一練輪流", "團討時請同學輪流說出自己的名字", "午睡前讓他和一位同學一起看繪本"], a: 0,
+        x: "共玩需要同儕在場、也需要有大家都想要的東西。熱門教具和鞦韆天然就有等待和輪流。抽離練不到同伴，團討和午睡前的互動又太少。" },
       { t: "目標：遇到困難時說或比「幫我」。最自然的練習時機是？",
-        o: ["團討聽故事時", "點心時打不開餐盒、角落拿不到高處的材料", "午睡時間", "老師示範新教具時"], a: 1,
-        x: "真的需要幫忙的那一刻，就是最好的教學時機。先等 5 秒、再示範「幫我」，孩子說了就立刻幫。" },
+        o: ["老師示範新教具時，請他跟著說「幫我」", "團討時請他練習舉手，並說出「幫我」兩個字", "打不開點心盒、拿不到高處材料的時候", "午睡起床後請他練習說三次「幫我」"], a: 2,
+        x: "真的需要幫忙的那一刻，就是最好的教學時機。先等 5 秒、再示範「幫我」，他說了就立刻幫。其他選項都是在不需要幫忙的時候練。" },
     ],
   },
   r4: {
     intro: "沒有唯一標準答案，但有些回應更能「維持合作」。選一個你最想用的說法。",
     qs: [
       { who: "老師 ⇄ 家長", t: "開學兩個月，小宇幾乎不開口、也不跟同學玩。媽媽說：「他只是大隻雞慢啼，男生都比較晚。」老師最適合怎麼回應？",
-        o: ["「我們班很多男生都很活潑，他確實比較安靜。」", "「我先分享這兩個月看到的：團討時他幾乎沒開口，點心時會用手指要東西。您在家看到的是什麼？」", "「建議您趕快帶他去做評估，比較保險。」", "「好的，那我們再觀察看看。」"], a: 1,
-        x: "先「描述」看到的事實（不加評價），再「邀請」家長分享在家的樣子。不否定家長，也為之後談評估鋪路。" },
+        o: ["「我們班很多男生也很活潑，他確實比較安靜一點。」", "「團討時他幾乎沒開口，點心會用手指要。您在家呢？」", "「建議您這週就帶他去醫院做評估，比較保險。」", "「好的，那我們就再觀察一個學期看看，不用太擔心。」"], a: 1,
+        x: "先描述看到的事實，再邀請家長分享。A 拿別的孩子比較，C 太早跳到轉介，D 把觀察延後了一整個學期。" },
       { who: "治療師 ⇄ 老師", t: "治療師建議每天在班上做 30 分鐘練習。老師說：「班上 25 個孩子，我做不到。」巡輔老師最適合怎麼接？",
-        o: ["「這是治療師的處方，還是要盡量做。」", "「那請家長在家補做。」", "「我們把目標拆小，看點心、洗手、戶外哪幾個時刻可以順便練，老師覺得哪個最可行？」", "「那就先不要做好了。」"], a: 2,
-        x: "巡輔老師的角色像翻譯：把建議改成「嵌入作息」的版本，並讓老師決定可行的時機。做得到的版本，才會真的被執行。" },
+        o: ["「這是治療師的專業建議，老師還是要盡量排出時間。」", "「那就請家長在家補做，班上先不要勉強。」", "「我們把目標拆小，看點心、戶外哪一段可以順便練？」", "「班上人太多真的做不到，這個建議先暫停好了。」"], a: 2,
+        x: "巡輔老師像翻譯：把建議改成嵌入作息的版本，讓老師決定可行的時機。A 硬壓，B 把工作丟給家長，D 直接放棄。" },
       { who: "導師 ⇄ 助理人員", t: "助理人員習慣直接幫孩子把作品貼完，導師希望孩子自己做。導師最適合怎麼處理？",
-        o: ["當場說：「你不要幫他做！」", "直接向園長反映助理不照規矩", "事後私下說：「我看到作品是你幫忙貼完的，我猜你是想讓他有成就感。IEP 這學期想練『自己貼』，我們約好哪一步由你協助，好嗎？」", "默默自己接手，不再讓助理參與"], a: 2,
-        x: "私下、先描述、說出善意的猜測，再回到 IEP 的共同目標並一起約定。避免在孩子面前糾正，也別把問題丟給第三人。" },
+        o: ["事後私下聊：先說看到的，再一起約好協助到哪一步", "當場直接提醒：「你不要幫他做，讓他自己來就好。」", "請園長出面提醒助理，要照規定協助孩子", "自己接手這個孩子，之後不再讓助理參與"], a: 0,
+        x: "私下、先描述、回到 IEP 的共同目標再一起約定。B 在孩子面前糾正，C 把問題丟給第三人，D 等於放棄合作。" },
       { who: "老師 ⇄ 家長", t: "家長說：「我不同意鑑定，我怕他被貼標籤。」老師最適合怎麼回應？",
-        o: ["「不鑑定就沒有巡輔，您要想清楚。」", "「好，那我們就當作沒這回事。」", "「其他家長都同意了。」", "「尊重您的顧慮，班上的支持不會中斷。依規定園所需要通報，我先跟您說明接下來怎麼走、資料誰看得到。」"], a: 3,
-        x: "先接住擔心，再把流程與資料使用說清楚；不威脅、不隱瞞，也不承諾做不到的事。家長不同意時，幼兒園依法仍須通報。" },
+        o: ["「不鑑定的話就沒有巡輔服務，您要再考慮清楚。」", "「好，那我們就當作沒這件事，也不會去通報。」", "「其他家長都同意了，其實真的沒有那麼嚴重。」", "「尊重您的顧慮，支持不會中斷；通報流程我先說明。」"], a: 3,
+        x: "先接住擔心，再把流程說清楚。A 像在施壓，B 違反通報規定，C 拿別人比較。家長不同意時，幼兒園依法仍須通報主管機關。" },
       { who: "巡輔 ⇄ 教保員", t: "小晴換活動時尖叫、推倒椅子。事後帶班老師很沮喪：「我是不是很不會帶？」巡輔老師最適合怎麼回應？",
-        o: ["「先喘口氣，你今天把大家都顧安全了。我們一起看看前後發生了什麼，找出下次可以先預告的地方。」", "「下次要更早處理。」", "「她本來就比較難帶。」", "「我去跟主任說一下。」"], a: 0,
-        x: "危機之後先照顧人，再一起回看前事、行為、後果。檢討的是支持方式，不是老師的能力。" },
+        o: ["「下次要更早介入，就不會鬧到推椅子了。」", "「她本來就比較難帶，不是你的問題啦。」", "「先喘口氣，我們一起看看前後發生了什麼。」", "「我去跟主任說，請他找人來處理這孩子。」"], a: 2,
+        x: "危機之後先照顧人，再一起回看前事、行為、後果。A 在責備老師，B 替孩子貼標籤，D 把孩子當成問題丟出去。" },
       { who: "主任 ⇄ 治療師", t: "治療師想看孩子在班上的影片來調整建議。主任最適合怎麼處理？",
-        o: ["請老師把整段班級影片用 LINE 傳過去", "拒絕，醫療的事不歸園所管", "先取得家長同意，只錄必要片段、避開其他孩子，用安全的方式傳", "請老師用自己的手機私下傳"], a: 2,
-        x: "合作很好，但要守住個資：先同意、只給必要的、避開他人、安全傳送。" },
+        o: ["請老師把整段班級影片用 LINE 直接傳給治療師", "先取得家長同意，只錄必要片段、避開其他孩子", "拒絕提供，醫療相關的事情不屬於園所責任", "請老師用自己的手機錄，私下傳給治療師"], a: 1,
+        x: "合作很好，但要守住個資：先取得同意、只給必要的、避開其他孩子、用安全的方式傳。" },
     ],
   },
   pledgeHint: "下週回到班上，我會……",
@@ -634,7 +636,7 @@ function viewCommon(S, host, now) {
     c.warmCount = Object.keys(S.warm).length;
   } else if (st === "r1") {
     c.answered = Object.keys(S.r1).length;
-    if (shown || host) c.dist = distOf(S.r1, CONTENT.r1.opts.length, S);
+    c.dist = distOf(S.r1, CONTENT.r1.opts.length, S); // 溫度計是匿名統計：投票後即可看到即時比例
   } else if (isQuiz(st) && S.qi >= 0) {
     const q = items(S)[S.qi], k = keyOf(S);
     c.q = { t: q.t, o: q.o, n: items(S).length };
@@ -733,6 +735,22 @@ function exportCsv(S) {
       '</div><div class="val" id="' + prefix + "v" + i + '"></div></div>').join("") + "</div>";
   }
   const roleKeys = ROLES.map((r) => r.k);
+  // 溫度計：每個選項一條橘色比例條（占全部作答的百分比），下方細條是各職務組成
+  function barFrame(prefix, labels) {
+    return '<div class="stack">' + labels.map((l, i) =>
+      '<div class="srow"><div class="lab">' + esc(l) + '</div><div class="track"><span class="all" id="' + prefix + i + 'a"></span></div>' +
+      '<div class="track mini">' + roleKeys.map((k) => '<span class="' + k + '" id="' + prefix + i + k + '"></span>').join("") + "</div>" +
+      '<div class="val" id="' + prefix + "v" + i + '"></div></div>').join("") + "</div>";
+  }
+  function barFill(prefix, dist) {
+    const total = dist.reduce((a, d) => a + d.all, 0);
+    dist.forEach((d, i) => {
+      const pct = total ? (d.all / total) * 100 : 0;
+      const a = $(prefix + i + "a"); if (a) a.style.width = pct + "%";
+      roleKeys.forEach((k) => { const e = $(prefix + i + k); if (e) e.style.width = (total ? (d[k] / total) * 100 : 0) + "%"; });
+      const v = $(prefix + "v" + i); if (v) v.textContent = d.all + " 人（" + Math.round(pct) + "%）";
+    });
+  }
   function stackFill(prefix, dist, mark) {
     const max = Math.max(1, ...dist.map((d) => d.all));
     const total = dist.reduce((a, d) => a + d.all, 0);
@@ -861,14 +879,14 @@ function exportCsv(S) {
         fill() { CONTENT.warmOpts.forEach((_, i) => { const b = q("#w" + i); if (b) b.classList.toggle("sel", me.warm === i); }); q("#wmsg").textContent = me.warm >= 0 ? "已選擇，可隨時改選。" : "點一個最接近的就好，不用打字。"; },
       };
       if (st === "r1") {
-        const open = c.phase === "open";
+        const open = c.phase === "open", see = !open || me.pick >= 0;
         return {
-          sig: "r1" + c.phase,
+          sig: "r1" + c.phase + see,
           frame: '<div class="card"><p class="kick">R1 · 現場溫度計</p><h2>' + esc(CONTENT.r1.q) + '</h2><p class="mute">' + (open ? esc(CONTENT.r1.hint.replace("講者揭曉後會看到", "揭曉後會看到")) + "　可在揭曉前更改。" : "投票已鎖定，看看大家怎麼想。") + "</p>" + optsFrame(CONTENT.r1.opts) + "</div>" +
-            (open ? "" : '<div class="card"><h2>全場結果</h2>' + stackFrame("rs", CONTENT.r1.opts) + legend() + "</div>"),
+            (see ? '<div class="card"><h2>' + (open ? "目前結果（即時更新）" : "全場結果") + "</h2>" + barFrame("rs", CONTENT.r1.opts) + legend() + "</div>" : ""),
           fill() {
             CONTENT.r1.opts.forEach((_, i) => { const b = q("#o" + i); b.classList.toggle("sel", me.pick === i); b.disabled = !open; });
-            if (!open && c.dist) stackFill("rs", c.dist);
+            if (see && c.dist) barFill("rs", c.dist);
           },
         };
       }
@@ -1079,8 +1097,8 @@ function exportCsv(S) {
       };
       if (st === "r1") return {
         sig: "r1",
-        frame: topHtml("R1 · " + sh.name, esc(CONTENT.r1.q), '<span id="ans"></span>') + '<div class="hstack" id="hs">' + stackFrame("hs", CONTENT.r1.opts) + '</div><div class="hlegend">' + ROLES.map((r) => '<span><i style="background:' + r.c + '"></i>' + r.n + "</span>").join("") + "</div>",
-        fill() { q("#ans").textContent = "已作答 " + c.answered + " / " + c.count + " 人" + (c.phase === "open" ? "　（投票進行中）" : "　（已鎖定）"); if (c.dist) stackFill("hs", c.dist); },
+        frame: topHtml("R1 · " + sh.name, esc(CONTENT.r1.q), '<span id="ans"></span>') + '<div class="hstack" id="hs">' + barFrame("hs", CONTENT.r1.opts) + '</div><div class="hlegend">' + ROLES.map((r) => '<span><i style="background:' + r.c + '"></i>' + r.n + "</span>").join("") + "</div>",
+        fill() { q("#ans").textContent = "已作答 " + c.answered + " / " + c.count + " 人" + (c.phase === "open" ? "　（投票進行中）" : "　（已鎖定）"); if (c.dist) barFill("hs", c.dist); },
       };
       if (isQuizStage(st) || st === "r4") {
         const cfg = CONTENT[st];
@@ -1370,7 +1388,7 @@ function exportCsv(S) {
     const report = () => { const n = Object.keys(okSet).filter((k) => okSet[k]).length; diag && diag(n > 0 ? "免伺服器模式：中繼站已連線（" + n + "/" + urls.length + "）。請保持此分頁開啟、電腦不要休眠；結束後請匯出紀錄。" : "無法連上中繼站（公用 MQTT）。請檢查這台電腦的網路／防火牆是否允許 wss 連線，系統會持續重試。", n > 0); };
     mqs = urls.map((u) => Mqtt(u, [p + "/act"], { onMessage: onMsg, onStatus(st) { okSet[u] = st === "ok"; report(); if (st === "ok") { lastC = ""; Object.keys(lastMe).forEach((k) => delete lastMe[k]); dirty = true; } } }));
     hub.listeners.push(() => { dirty = true; });
-    ticker(() => { if (dirty) { dirty = false; flush(false); } }, 250);
+    ticker(() => { if (dirty) { dirty = false; flush(false); } }, 100); // 0.1 秒整理一次，縮短作答回饋
     ticker(drain, 100);
     ticker(beat, 2000);
     ticker(() => flush(true), 30000);
