@@ -216,6 +216,38 @@ textarea.field{min-height:92px;resize:vertical}
 
 .qrcard .pub{display:flex;gap:6px;margin-top:8px}.qrcard .pub input{flex:1;min-width:0;border:2px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:.7em}.qrcard .pub button{margin:0;border:0;background:var(--teal);color:#fff;border-radius:8px;padding:6px 12px;text-decoration:none;font-weight:800;font-size:.7em}
 
+
+/* ===== 題目管理（主持人） ===== */
+.ed{position:fixed;inset:0;z-index:50;background:rgba(9,60,71,.55);display:flex;align-items:stretch;justify-content:center;padding:2vh 2vw;font-size:15px;color:var(--ink)}
+.ed-box{background:var(--mist);border-radius:16px;width:min(1100px,100%);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.ed-head{display:flex;align-items:center;gap:12px;padding:12px 18px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ed-head h2{margin:0;font-size:19px;color:var(--deep);flex:1;min-width:10em}
+.ed-tabs{display:flex;gap:6px;padding:10px 18px 0;background:#fff;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.ed-tabs button{border:0;background:none;padding:8px 12px;font-size:14px;font-weight:700;color:var(--mute);border-bottom:3px solid transparent}
+.ed-tabs button.on{color:var(--teal);border-bottom-color:var(--teal)}
+.ed-tabs button.lk::after{content:" 🔒";font-size:11px}
+.ed-body{flex:1;overflow:auto;padding:16px 18px 24px}
+.ed-foot{display:flex;gap:10px;align-items:center;padding:10px 18px;background:#fff;border-top:1px solid var(--line);flex-wrap:wrap}
+.ed-foot .sp{flex:1;min-width:1em;font-size:13px;color:var(--mute)}
+.ed-foot .err{color:var(--bad);font-weight:700}
+.eb{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:7px 12px;font-size:14px;font-weight:700}
+.eb.pri{background:var(--teal);border-color:var(--teal);color:#fff}
+.eb.del{color:var(--bad)}
+.eb:disabled{opacity:.4;cursor:not-allowed}
+.ed label.el{display:block;font-size:13px;font-weight:800;color:var(--deep);margin:10px 0 4px}
+.ed input.ei,.ed textarea.ei{width:100%;border:2px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:15px;background:#fff;color:var(--ink)}
+.ed textarea.ei{min-height:64px;resize:vertical}
+.ed .ei.bad{border-color:var(--bad);background:#fff4f0}
+.ed .eq{background:#fff;border-radius:14px;padding:12px 14px;margin-top:12px;box-shadow:0 1px 0 rgba(11,79,92,.06),0 4px 12px rgba(11,79,92,.06)}
+.ed .eqh{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ed .eqh b{flex:1;color:var(--teal)}
+.ed .eo{display:flex;align-items:center;gap:8px;margin-top:6px}
+.ed .eo .lt{width:1.6em;font-weight:800;color:var(--mute);text-align:center;flex:none}
+.ed .eo input[type=radio]{width:20px;height:20px;flex:none;accent-color:var(--good)}
+.ed .eo .ei{flex:1}
+.ed .note{background:#FFF6E5;border:1px solid #F2D49B;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:6px}
+.ed .tip{font-size:12px;color:var(--mute);margin-top:4px}
+.ed .sec{width:7em}
 </style>
 </head>
 <body>
@@ -382,7 +414,7 @@ const CONTENT = {
     opts: ["班上老師 ↔ 家長", "班上老師 ↔ 巡輔老師", "老師 ↔ 治療師／醫療端", "老師 ↔ 助理人員", "第一線 ↔ 園所行政"],
   },
   r2: {
-    limit: 20,
+    limit: 60,
     intro: "專業說法 → 教室看得到的行為。選出最像「錄影機拍得到」的描述。",
     qs: [
       { t: "評估報告寫：「感覺調節困難」。哪一句最像老師在班上「看得到」的樣子？",
@@ -406,7 +438,7 @@ const CONTENT = {
     ],
   },
   r3: {
-    limit: 25,
+    limit: 60,
     intro: "IEP 目標 → 最適合「嵌入」的作息時機。目標放進本來就要做的活動，不另外加課。",
     qs: [
       { t: "目標：用手勢或圖卡「表達想要的東西」。最自然的練習時機是？",
@@ -751,6 +783,75 @@ function exportCsv(S) {
   const isQuizStage = (s) => s === "r2" || s === "r3";
   const stageName = (id) => (STAGES.find((s) => s.id === id) || {}).name;
 
+  /* ====================== 題目內容管理（主持人可即時修改，存在主持人電腦） ====================== */
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const DEFAULT_CONTENT = clone(CONTENT);
+  let contentVer = 0; // 0＝內建題目；>0＝主持人改過（儲存時間）
+  const contentListeners = [];
+  const LIM = { t: 150, o: 80, x: 300, s: 120 };
+  // 檢查並整理一份題目內容；有問題回傳 { err, tab, path }
+  function checkContent(d) {
+    const bad = (tab, path, err) => ({ err, tab, path });
+    if (!d || typeof d !== "object") return bad("warm", "", "檔案格式不對");
+    const txt = (v, max) => String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+    const list = (arr, tab, path, min, max, lim) => {
+      if (!Array.isArray(arr)) return bad(tab, path, "選項格式不對");
+      const out = arr.map((x) => txt(x, lim));
+      if (out.length < min) return bad(tab, path, "至少要 " + min + " 個選項");
+      if (out.length > max) return bad(tab, path, "最多 " + max + " 個選項");
+      const e = out.findIndex((x) => !x); if (e >= 0) return bad(tab, path + "." + e, "有選項是空白的");
+      return out;
+    };
+    const o = {};
+    o.warmHint = txt(d.warmHint, LIM.s); if (!o.warmHint) return bad("warm", "warmHint", "暖身題目不能空白");
+    let l = list(d.warmOpts, "warm", "warmOpts", 2, 8, LIM.o); if (l.err) return l; o.warmOpts = l;
+    const r1 = d.r1 || {};
+    o.r1 = { q: txt(r1.q, LIM.t), hint: txt(r1.hint, LIM.s) };
+    if (!o.r1.q) return bad("r1", "r1.q", "R1 題目不能空白");
+    l = list(r1.opts, "r1", "r1.opts", 2, 8, LIM.o); if (l.err) return l; o.r1.opts = l;
+    for (const k of ["r2", "r3", "r4"]) {
+      const src = d[k] || {}, r = { intro: txt(src.intro, LIM.t), qs: [] };
+      if (k !== "r4") { r.limit = Math.round(+src.limit); if (!(r.limit >= 10 && r.limit <= 300)) return bad(k, k + ".limit", "每題秒數要在 10–300 秒之間"); }
+      if (!Array.isArray(src.qs) || !src.qs.length) return bad(k, k + ".qs", "至少要有 1 題");
+      for (let i = 0; i < src.qs.length; i++) {
+        const q = src.qs[i] || {}, pth = k + ".qs." + i, nq = { t: txt(q.t, LIM.t) };
+        if (k === "r4") nq.who = txt(q.who, 30);
+        if (!nq.t) return bad(k, pth + ".t", "第 " + (i + 1) + " 題的題目是空白的");
+        l = list(q.o, k, pth + ".o", 2, 6, LIM.o); if (l.err) { l.err = "第 " + (i + 1) + " 題：" + l.err; return l; } nq.o = l;
+        nq.a = Math.round(+q.a); if (!(nq.a >= 0 && nq.a < nq.o.length)) return bad(k, pth + ".a", "第 " + (i + 1) + " 題還沒選" + (k === "r4" ? "較建議的回應" : "正確答案"));
+        nq.x = txt(q.x, LIM.x);
+        r.qs.push(nq);
+      }
+      o[k] = r;
+    }
+    o.pledgeHint = txt(d.pledgeHint, LIM.s); if (!o.pledgeHint) return bad("r5", "pledgeHint", "R5 標題不能空白");
+    const r5 = d.r5 || {};
+    o.r5 = { hint: txt(r5.hint, LIM.s) };
+    l = list(r5.opts, "r5", "r5.opts", 2, 8, LIM.o); if (l.err) return l; o.r5.opts = l;
+    return { ok: o };
+  }
+  function setContent(d) { Object.keys(CONTENT).forEach((k) => delete CONTENT[k]); Object.assign(CONTENT, clone(d)); }
+  // 送給手機的「公開版」：不含 R2–R4 題目（題目與正解由主持人逐題送出，揭曉前手機拿不到答案）
+  function publicContent() {
+    return { r1: CONTENT.r1, r5: CONTENT.r5, warmHint: CONTENT.warmHint, warmOpts: CONTENT.warmOpts, pledgeHint: CONTENT.pledgeHint,
+      r2: { limit: CONTENT.r2.limit, intro: CONTENT.r2.intro }, r3: { limit: CONTENT.r3.limit, intro: CONTENT.r3.intro }, r4: { intro: CONTENT.r4.intro } };
+  }
+  function applyPublic(pc) {
+    ["r1", "r5", "warmHint", "warmOpts", "pledgeHint"].forEach((k) => { if (pc[k] != null) CONTENT[k] = pc[k]; });
+    ["r2", "r3", "r4"].forEach((k) => { if (pc[k]) Object.assign(CONTENT[k], pc[k]); });
+  }
+  function loadSavedContent() {
+    try {
+      const sv = JSON.parse(store.get("kj_content") || "null");
+      if (sv && sv.cv && sv.data) { const r = checkContent(sv.data); if (r.ok) { setContent(r.ok); contentVer = sv.cv; } }
+    } catch (e) {}
+  }
+  function saveContent(d) {
+    setContent(d); contentVer = Math.max(Date.now(), contentVer + 1);
+    store.set("kj_content", JSON.stringify({ cv: contentVer, data: d }));
+    contentListeners.forEach((f) => f());
+  }
+
   function stackFrame(prefix, labels) {
     return '<div class="stack">' + labels.map((l, i) =>
       '<div class="srow"><div class="lab">' + (LTR[i] ? "" : "") + esc(l) + '</div><div class="track">' +
@@ -821,6 +922,7 @@ function exportCsv(S) {
       notify() { subs.forEach((s) => s.f(hub.view(s.pid, s.host))); hub.listeners.forEach((f) => f()); },
     };
     ticker(() => { if (tick(S, Date.now())) hub.notify(); }, 500);
+    contentListeners.push(() => { S.ver++; hub.notify(); }); // 題目改了：所有畫面重畫
     return hub;
   }
   function localTransport(hub, pid, isHost, opts) {
@@ -1008,11 +1110,12 @@ function exportCsv(S) {
       if (c.stage !== "qa") sawQa = false;
       root.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
       const qb = root.querySelector("#qab"); qb.hidden = !c.qaCount; qb.textContent = c.qaCount;
-      const s = screens();
-      if (s.sig !== lastSig) { main.innerHTML = s.frame; lastSig = s.sig; main.scrollTop = 0; }
+      const s = screens(), sig = sigOf(s);
+      if (sig !== lastSig) { main.innerHTML = s.frame; lastSig = sig; main.scrollTop = 0; }
       s.fill();
     }
-    function fill() { if (V) { const s = screens(); if (s.sig === lastSig) s.fill(); } }
+    const sigOf = (s) => s.sig + "|" + (V.c.cv || 0) + "|" + contentVer; // 題目改版時一定重畫
+    function fill() { if (V) { const s = screens(); if (sigOf(s) === lastSig) s.fill(); } }
 
     function frameTimer() {
       const tb = root.querySelector("#tb");
@@ -1032,7 +1135,7 @@ function exportCsv(S) {
     let V = null, offset = 0, lastSig = "", urlI = 0, info = { urls: [] }, resetArm = 0;
     root.innerHTML =
       '<div class="host"><div class="h-top"><div class="h-brand">跨界溝通大挑戰<small>看懂孩子 · 說得通 · 做得到</small></div><div class="steps" id="steps"></div><div class="h-stat" id="hstat"></div></div>' +
-      '<div class="h-main" id="hmain"></div><div class="h-bar"><div class="hint">快捷鍵：空白鍵／→ 下一步　← 上一階段　</div><button class="hbtn sec" id="prev">上一階段</button><button class="hbtn" id="prim">開始</button></div></div>';
+      '<div class="h-main" id="hmain"></div><div class="h-bar"><div class="hint">快捷鍵：空白鍵／→ 下一步　← 上一階段　</div>' + (T.relay || T.demo ? '<button class="hbtn sec" id="edit">✏️ 題目管理</button>' : "") + '<button class="hbtn sec" id="prev">上一階段</button><button class="hbtn" id="prim">開始</button></div></div>';
     const hm = root.querySelector("#hmain"), prim = root.querySelector("#prim"), prev = root.querySelector("#prev");
     const q = (s) => hm.querySelector(s);
     T.onView((v) => { V = v; offset = v.c.now - Date.now(); render(); });
@@ -1071,9 +1174,10 @@ function exportCsv(S) {
       const a = document.createElement("a"); a.href = url; a.download = "跨界溝通大挑戰_紀錄.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
     }
     prim.onclick = () => { if (V) primary().fn(); };
+    const edBtn = root.querySelector("#edit"); if (edBtn) edBtn.onclick = () => { if (V) openEditor(); };
     prev.onclick = () => { if (V && stIdx() > 0) T.send({ type: "stage", stage: STAGE_IDS[stIdx() - 1] }); };
     document.addEventListener("keydown", (e) => {
-      if (!V || /INPUT|TEXTAREA/.test((e.target || {}).tagName || "")) return;
+      if (!V || ed || /INPUT|TEXTAREA/.test((e.target || {}).tagName || "")) return; // 題目管理開著時不觸發快捷鍵
       if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); primary().fn(); }
       if (e.key === "ArrowLeft") { e.preventDefault(); prev.onclick(); }
     });
@@ -1092,6 +1196,134 @@ function exportCsv(S) {
         const b2 = e.target.closest("#rst"); if (Date.now() - resetArm > 4000) { resetArm = Date.now(); b2.textContent = "再按一次確定清空全部資料"; } else { T.send({ type: "reset" }); resetArm = 0; }
       }
     });
+
+
+    /* ---------- 題目管理（只在主持人畫面） ---------- */
+    const ED_TABS = [["warm", "入場暖身"], ["r1", "R1 溫度計"], ["r2", "R2 翻譯機"], ["r3", "R3 嵌入挑戰"], ["r4", "R4 小劇場"], ["r5", "R5 行動承諾"]];
+    let ed = null; // { el, draft, tab, dirty }
+    function lockedTab() { // 正在進行的那一輪：只能改文字，不能增刪題目／選項、不能改正解與秒數
+      if (!V) return "";
+      const c = V.c;
+      if (c.stage === "lobby") return "warm";
+      if (c.stage === "r1" || c.stage === "r5") return c.stage;
+      if ((isQuizStage(c.stage) || c.stage === "r4") && c.qi >= 0) return c.stage;
+      return "";
+    }
+    const getP = (o, path) => path.split(".").reduce((x, k) => (x == null ? x : x[k]), o);
+    function setP(o, path, v) { const ks = path.split("."), last = ks.pop(); const t = ks.reduce((x, k) => x[k], o); t[last] = v; }
+    function openEditor() {
+      if (ed) return;
+      const el = document.createElement("div"); el.className = "ed"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "題目管理");
+      el.innerHTML = '<div class="ed-box"><div class="ed-head"><h2>題目管理</h2><button class="eb" data-e="export">匯出題目檔</button><button class="eb" data-e="import">匯入題目檔</button><button class="eb" data-e="default">載入內建題目</button><input type="file" accept=".json,application/json" hidden></div>' +
+        '<div class="ed-tabs"></div><div class="ed-body"></div><div class="ed-foot"><span class="sp"></span><button class="eb" data-e="close">取消</button><button class="eb pri" data-e="save">儲存並同步到所有手機</button></div></div>';
+      document.body.appendChild(el);
+      ed = { el, draft: clone(CONTENT), tab: lockedTab() || "r2", dirty: false };
+      el.addEventListener("input", (e) => {
+        const t = e.target; if (!t.dataset.p) return;
+        let v = t.value; if (t.type === "radio") v = +v; if (t.dataset.num) v = +v;
+        setP(ed.draft, t.dataset.p, v); ed.dirty = true; t.classList.remove("bad"); msg("");
+        if (t.type === "radio") drawEd();
+      });
+      el.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-e]"); if (!b || b.disabled) return;
+        const op = b.dataset.e, path = b.dataset.p, i = +b.dataset.i;
+        if (op === "tab") { ed.tab = b.dataset.t; drawEd(); el.querySelector(".ed-body").scrollTop = 0; return; }
+        if (op === "close") { if (!ed.dirty || confirm("有修改還沒儲存，確定要放棄嗎？")) closeEditor(); return; }
+        if (op === "save") return saveEd();
+        if (op === "export") return exportEd();
+        if (op === "import") { el.querySelector("input[type=file]").click(); return; }
+        if (op === "default") { if (confirm("把所有題目換回內建版本？（按「儲存」後才會生效）")) { const lk = lockedTab(); const d = clone(DEFAULT_CONTENT); if (lk) keepLocked(d, lk); ed.draft = d; ed.dirty = true; drawEd(); msg(lk ? "已載入內建題目；進行中的這一輪保留目前內容。" : "已載入內建題目，請按「儲存」生效。"); } return; }
+        const arr = getP(ed.draft, path);
+        if (op === "addopt") { arr.push(""); }
+        else if (op === "delopt") { arr.splice(i, 1); const qp = path.replace(/\.o$/, ""); const q = getP(ed.draft, qp); if (q && typeof q.a === "number") { if (q.a === i) q.a = -1; else if (q.a > i) q.a--; } }
+        else if (op === "addq") { arr.push(ed.tab === "r4" ? { who: "", t: "", o: ["", "", "", ""], a: -1, x: "" } : { t: "", o: ["", "", "", ""], a: -1, x: "" }); }
+        else if (op === "delq") { if (!confirm("刪除第 " + (i + 1) + " 題？")) return; arr.splice(i, 1); }
+        else if (op === "up" && i > 0) { const x = arr[i]; arr[i] = arr[i - 1]; arr[i - 1] = x; }
+        else if (op === "down" && i < arr.length - 1) { const x = arr[i]; arr[i] = arr[i + 1]; arr[i + 1] = x; }
+        ed.dirty = true; drawEd();
+        if (op === "addq") { const body = el.querySelector(".ed-body"); body.scrollTop = body.scrollHeight; }
+      });
+      el.querySelector("input[type=file]").addEventListener("change", (e) => {
+        const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+        const rd = new FileReader();
+        rd.onload = () => {
+          let d; try { d = JSON.parse(String(rd.result).replace(/^\uFEFF/, "")); } catch (_) { msg("這個檔案不是題目檔（JSON 格式）", true); return; }
+          if (d && d.content) d = d.content;
+          const r = checkContent(d); if (r.err) { msg("題目檔有問題：" + r.err, true); return; }
+          const lk = lockedTab(); if (lk) keepLocked(r.ok, lk);
+          ed.draft = r.ok; ed.dirty = true; drawEd(); msg("已匯入" + (lk ? "（進行中的這一輪保留目前內容）" : "") + "，請按「儲存」生效。");
+        };
+        rd.readAsText(f, "utf-8");
+      });
+      drawEd();
+    }
+    function keepLocked(d, lk) { // 進行中的那一輪不整份換掉，避免題數或選項數改變
+      if (lk === "warm") { d.warmHint = CONTENT.warmHint; d.warmOpts = clone(CONTENT.warmOpts); }
+      else if (lk === "r5") { d.r5 = clone(CONTENT.r5); d.pledgeHint = CONTENT.pledgeHint; }
+      else d[lk] = clone(CONTENT[lk]);
+    }
+    function closeEditor() { if (ed) { ed.el.remove(); ed = null; } }
+    function msg(t, err) { if (!ed) return; const m = ed.el.querySelector(".ed-foot .sp"); m.textContent = t; m.classList.toggle("err", !!err); }
+    function exportEd() {
+      const txt = JSON.stringify({ app: "kuajie-game", saved: new Date().toISOString(), content: ed.draft }, null, 2);
+      const url = URL.createObjectURL(new Blob([txt], { type: "application/json;charset=utf-8" }));
+      const a = document.createElement("a"); a.href = url; a.download = "跨界溝通大挑戰_題目.json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+      msg("已匯出目前編輯中的題目（尚未儲存的修改也包含在內）。");
+    }
+    function saveEd() {
+      const r = checkContent(ed.draft);
+      if (r.err) {
+        ed.tab = r.tab; drawEd(); msg(r.err, true);
+        const t = ed.el.querySelector('[data-p="' + r.path + '"]') || ed.el.querySelector('[data-p^="' + r.path + '."]');
+        if (t) { t.classList.add("bad"); t.scrollIntoView({ block: "center" }); if (t.focus) t.focus(); }
+        return;
+      }
+      const lk = lockedTab();
+      if (lk) { // 再保險一次：進行中那一輪的結構不能變
+        const a = lk === "warm" ? [CONTENT.warmOpts, r.ok.warmOpts] : lk === "r1" ? [CONTENT.r1.opts, r.ok.r1.opts] : lk === "r5" ? [CONTENT.r5.opts, r.ok.r5.opts] : null;
+        const same = a ? a[0].length === a[1].length : CONTENT[lk].qs.length === r.ok[lk].qs.length && CONTENT[lk].qs.every((q, i) => q.o.length === r.ok[lk].qs[i].o.length && q.a === r.ok[lk].qs[i].a) && CONTENT[lk].limit === r.ok[lk].limit;
+        if (!same) { msg("進行中的這一輪不能增刪題目或選項、不能改正解與秒數。請先切到其他階段再改。", true); return; }
+      }
+      saveContent(r.ok); ed.draft = clone(CONTENT); ed.dirty = false; drawEd();
+      msg("已儲存，手機畫面會在幾秒內更新。題目存在這台電腦的瀏覽器裡；換電腦請先「匯出題目檔」。");
+    }
+    function drawEd() {
+      const d = ed.draft, lk = lockedTab(), L = ed.tab === lk;
+      ed.el.querySelector(".ed-tabs").innerHTML = ED_TABS.map(([k, n]) => '<button data-e="tab" data-t="' + k + '" class="' + (k === ed.tab ? "on " : "") + (k === lk ? "lk" : "") + '">' + n + "</button>").join("");
+      const inp = (path, val, ph, max) => '<input class="ei" data-p="' + path + '" value="' + esc(val) + '" maxlength="' + (max || LIM.o) + '" placeholder="' + esc(ph || "") + '">';
+      const area = (path, val, ph, max) => '<textarea class="ei" data-p="' + path + '" maxlength="' + (max || LIM.t) + '" placeholder="' + esc(ph || "") + '">' + esc(val) + "</textarea>";
+      const lab = (t) => '<label class="el">' + t + "</label>";
+      const dis = L ? " disabled" : "";
+      function optList(path, arr, ansPath, ans, max) {
+        return arr.map((t, i) => '<div class="eo"><span class="lt">' + LTR[i] + "</span>" +
+          (ansPath ? '<input type="radio" name="' + ansPath + '" data-p="' + ansPath + '" value="' + i + '"' + (ans === i ? " checked" : "") + dis + ' title="' + (ed.tab === "r4" ? "較建議的回應" : "正確答案") + '">' : "") +
+          inp(path + "." + i, t, "選項 " + LTR[i]) + '<button class="eb del" data-e="delopt" data-p="' + path + '" data-i="' + i + '"' + (L || arr.length <= 2 ? " disabled" : "") + ' title="刪除這個選項">✕</button></div>').join("") +
+          '<button class="eb" style="margin-top:8px" data-e="addopt" data-p="' + path + '"' + (L || arr.length >= max ? " disabled" : "") + ">＋ 新增選項</button>" +
+          (ansPath ? '<p class="tip">左邊圓點＝' + (ed.tab === "r4" ? "較建議的回應（揭曉時標 ★）" : "正確答案") + "。選項最多 " + max + " 個。</p>" : '<p class="tip">選項最多 ' + max + " 個。</p>");
+      }
+      let h = L ? '<div class="note">🔒 這一輪正在進行：可以修改文字（錯字、說法），但' + (isQuizStage(lk) ? "不能增刪題目或選項、不能改正確答案與秒數" : lk === "r4" ? "不能增刪題目或選項、不能改較建議的回應" : "不能增刪選項") + "。要大改請先切到其他階段。</div>" : "";
+      const t = ed.tab;
+      if (t === "warm") h += lab("暖身題目（入場時手機上顯示）") + inp("warmHint", d.warmHint, "", LIM.s) + lab("選項") + optList("warmOpts", d.warmOpts, null, null, 8);
+      else if (t === "r1") h += lab("R1 題目") + area("r1.q", d.r1.q) + lab("手機上的說明") + inp("r1.hint", d.r1.hint, "", LIM.s) + lab("選項") + optList("r1.opts", d.r1.opts, null, null, 8);
+      else if (t === "r5") h += lab("R5 標題") + inp("pledgeHint", d.pledgeHint, "", LIM.s) + lab("手機上的說明") + inp("r5.hint", d.r5.hint, "", LIM.s) + lab("行動選項（每人最多選 3 項）") + optList("r5.opts", d.r5.opts, null, null, 8);
+      else {
+        const r = d[t], qs = r.qs;
+        h += lab("這一輪的說明（開始前顯示）") + area(t + ".intro", r.intro);
+        if (t !== "r4") h += lab("每題倒數秒數") + '<input class="ei sec" type="number" min="10" max="300" step="5" data-num="1" data-p="' + t + '.limit" value="' + r.limit + '"' + dis + '><span class="tip">　答得越快分數越高（答對 500–1000 分）</span>';
+        h += qs.map((q, i) => {
+          const p = t + ".qs." + i;
+          return '<div class="eq"><div class="eqh"><b>第 ' + (i + 1) + " 題</b>" +
+            '<button class="eb" data-e="up" data-p="' + t + '.qs" data-i="' + i + '"' + (L || i === 0 ? " disabled" : "") + ' title="上移">↑</button>' +
+            '<button class="eb" data-e="down" data-p="' + t + '.qs" data-i="' + i + '"' + (L || i === qs.length - 1 ? " disabled" : "") + ' title="下移">↓</button>' +
+            '<button class="eb del" data-e="delq" data-p="' + t + '.qs" data-i="' + i + '"' + (L || qs.length <= 1 ? " disabled" : "") + ">刪除這題</button></div>" +
+            (t === "r4" ? lab("對象（例如：老師 ⇄ 家長）") + inp(p + ".who", q.who || "", "", 30) : "") +
+            lab(t === "r4" ? "情境" : "題目") + area(p + ".t", q.t) + lab("選項") + optList(p + ".o", q.o, p + ".a", q.a, 6) +
+            lab("揭曉後的解析") + area(p + ".x", q.x, "為什麼這個答案比較好？", LIM.x) + "</div>";
+        }).join("") + '<button class="eb" style="margin-top:12px" data-e="addq" data-p="' + t + '.qs"' + dis + ">＋ 新增一題</button>";
+      }
+      const body = ed.el.querySelector(".ed-body"), st = body.scrollTop;
+      body.innerHTML = h; body.scrollTop = st;
+    }
 
     function drawQr() {
       const box = q("#qr"); if (!box) return;
@@ -1132,13 +1364,13 @@ function exportCsv(S) {
           fill() { const bd = q("#bd"); if (bd) bd.innerHTML = c.top ? '<div class="h-sub">目前排行榜</div>' + boardHtml(c.top.slice(0, 5)) : ""; },
         };
         if (c.phase === "done") {
-          if (st === "r4") return { sig: "r4done", frame: topHtml("R4 · 溝通小劇場", "三個情境都走完了", "共同的原則：先描述，再理解，最後邀請。") + '<div class="expl"><b>帶走：</b>回應之前先問自己——我描述的是事實，還是我的判斷？我有沒有邀請對方一起決定下一步？</div>', fill() {} };
+          if (st === "r4") return { sig: "r4done", frame: topHtml("R4 · 溝通小劇場", "所有情境都走完了", "共同的原則：先描述，再理解，最後邀請。") + '<div class="expl"><b>帶走：</b>回應之前先問自己——我描述的是事實，還是我的判斷？我有沒有邀請對方一起決定下一步？</div>', fill() {} };
           return { sig: st + "done", frame: topHtml(sh.short + " · " + sh.name, "排行榜 前十名") + '<div class="hboard" id="bd"></div>', fill() { q("#bd").innerHTML = boardHtml(c.top || []); } };
         }
         const open = c.phase === "open", qd = c.q;
         return {
           sig: st + c.qi + (open ? "o" : "r"),
-          frame: '<div class="hrow"><div style="flex:1">' + topHtml(sh.short + " · 第 " + (c.qi + 1) + " / " + qd.n + " 題" + (qd.who ? " · " + qd.who : ""), esc(qd.t)) + "</div>" + (open && isQuizStage(st) ? '<div class="tnum" id="tn">20</div>' : "") + "</div>" +
+          frame: '<div class="hrow"><div style="flex:1">' + topHtml(sh.short + " · 第 " + (c.qi + 1) + " / " + qd.n + " 題" + (qd.who ? " · " + qd.who : ""), esc(qd.t)) + "</div>" + (open && isQuizStage(st) ? '<div class="tnum" id="tn">' + CONTENT[st].limit + '</div>' : "") + "</div>" +
             (open && isQuizStage(st) ? '<div class="htimer" id="ht"><i id="hi"></i></div>' : "") + optsHtml(qd, st === "r4" ? " one" : "", true) + '<div class="hans" id="hans"></div><div id="hx"></div>',
           fill() {
             q("#hans").textContent = open ? "已作答 " + c.answered + " / " + c.count + " 人" : "";
@@ -1193,8 +1425,8 @@ function exportCsv(S) {
       root.querySelector("#steps").innerHTML = STAGES.map((s, k) => '<button data-st="' + s.id + '" class="' + (k === i ? "on" : k < i ? "past" : "") + '">' + s.short + "</button>").join("");
       root.querySelector("#hstat").innerHTML = "<span><b>" + c.count + "</b> 人</span>" + (c.qaCount ? '<span class="h-q">提問 ' + c.qaCount + "</span>" : "");
       const p = primary(); prim.textContent = p.label + "　→"; prev.disabled = i === 0;
-      const s = screen();
-      if (s.sig !== lastSig) { hm.innerHTML = s.frame; lastSig = s.sig; }
+      const s = screen(), sig = s.sig + "|" + contentVer;
+      if (sig !== lastSig) { hm.innerHTML = s.frame; lastSig = sig; }
       s.fill();
     }
     function tickTimer() {
@@ -1320,12 +1552,12 @@ function exportCsv(S) {
     function heal() { // 個人畫面遲遲沒更新（訊息可能在中繼站遺失）→ 請主持人重送；必要時重送加入
       if (!mq || !gotC || !c) return;
       const now = Date.now(), k = c.stage + ":" + c.qi;
-      const stale = (joinA && !me.joined && now - joinAt > 4000) || (me.joined && me.k !== k) || (hostE === cE && hostV > cV); // 漏收共同畫面或個人畫面
+      const stale = (joinA && !me.joined && now - joinAt > 4000) || (me.joined && me.k !== k) || (hostE === cE && hostV > cV) || (c.cv || 0) > contentVer; // 漏收共同畫面、個人畫面或新版題目
       if (!stale) { staleSince = 0; return; }
       if (!staleSince) { staleSince = now; return; }
       if (now - staleSince < 3500 || now - lastHello < 4000) return;
       lastHello = now;
-      mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello" } }), false);
+      mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello", cv: contentVer } }), false);
       if (joinA && !me.joined) mq.publish(p + "/act", JSON.stringify({ pid, a: joinA }), false);
     }
     const newer = (e, v, curE, curV) => e == null || e > curE || (e === curE && (v == null || v >= curV));
@@ -1347,11 +1579,15 @@ function exportCsv(S) {
     function open() {
       if (mq) mq.close();
       gotC = false; lastT = 0; openedAt = Date.now();
-      mq = Mqtt(urls[idx % urls.length], [p + "/c", p + "/me/" + pid, p + "/t"], {
-        onStatus(st) { if (st === "ok") { mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello" } }), false); } else scb("bad", "無法連上中繼站，正在重試或切換備援…"); if (st === "ok") status(); },
+      mq = Mqtt(urls[idx % urls.length], [p + "/c", p + "/me/" + pid, p + "/t", p + "/k"], {
+        onStatus(st) { if (st === "ok") { mq.publish(p + "/act", JSON.stringify({ pid, a: { type: "hello", cv: contentVer } }), false); } else scb("bad", "無法連上中繼站，正在重試或切換備援…"); if (st === "ok") status(); },
         onMessage(topic, text, retain) {
           if (topic === p + "/t") { try { const t = JSON.parse(text); tOff = t.now - Date.now(); lastT = Date.now(); if (t.v != null) { hostV = t.v; hostE = t.e; } } catch (e) {} status(); emit(); return; }
           let o; try { o = JSON.parse(text); } catch (e) { return; }
+          if (topic === p + "/k") { // 主持人改過的題目
+            if (o && o.cv > contentVer && o.d) { try { applyPublic(o.d); contentVer = o.cv; } catch (e) {} emit(); }
+            return;
+          }
           if (topic === p + "/c") {
             if (!newer(o.e, o.ver, cE, cV)) return; // 過期的保留訊息
             cE = o.e == null ? cE : o.e; cV = o.ver; c = o;
@@ -1390,7 +1626,7 @@ function exportCsv(S) {
       let m; try { m = JSON.parse(text); } catch (e) { return; }
       if (!m || !m.a || typeof m.pid !== "string") return;
       if (m.pid.length >= 6) known.add(m.pid);
-      if (m.a.type === "hello") { delete lastMe[m.pid]; lastC = ""; dirty = true; beat(); return; } // hello＝觀眾覺得資料不完整：共同畫面與個人畫面都重送
+      if (m.a.type === "hello") { delete lastMe[m.pid]; lastC = ""; dirty = true; beat(); if (m.a.cv !== contentVer) pubK(false); return; } // hello＝觀眾覺得資料不完整：共同畫面與個人畫面都重送
       const isHost = m.k === key && HOST_TYPES.includes(m.a.type);
       if (HOST_TYPES.includes(m.a.type) && !isHost) return;
       hub.act(m.pid, isHost, m.a); dirty = true;
@@ -1398,9 +1634,12 @@ function exportCsv(S) {
     let lastBeat = 0;
     function beat() { const n = Date.now(); if (n - lastBeat < 400) return; lastBeat = n; mqs.forEach((q) => q.publish(p + "/t", JSON.stringify({ now: n, v: hub.S.ver, e: epoch }), false, true)); } // 心跳附上目前版本，觀眾可自行察覺漏收
     function pubAll(topic, text) { mqs.forEach((q) => q.publish(topic, text, true)); }
+    let lastK = 0; // 題目內容（保留訊息）：改版時、線路重連時、有手機回報版本不符時送出
+    function pubK(force) { if (!contentVer) return; const n = Date.now(); if (!force && n - lastK < 1500) return; lastK = n; pubAll(p + "/k", JSON.stringify({ cv: contentVer, d: publicContent() })); }
+    contentListeners.push(() => { pubK(true); lastC = ""; dirty = true; });
     function flush(force) {
       const S = hub.S, now = Date.now();
-      const co = viewCommon(S, false, now); co.now = 0; co.e = epoch; const cs = JSON.stringify(co);
+      const co = viewCommon(S, false, now); co.now = 0; co.e = epoch; co.cv = contentVer; const cs = JSON.stringify(co);
       if (force || cs !== lastC) { pubAll(p + "/c", cs); lastC = cs; }
       Object.keys(S.players).forEach((pid) => known.add(pid));
       known.forEach((pid) => { const m = viewMe(S, pid), ms = JSON.stringify(m); if (force || lastMe[pid] !== ms) { outbox.set(pid, JSON.stringify(Object.assign({}, m, { e: epoch, v: S.ver }))); lastMe[pid] = ms; } });
@@ -1410,7 +1649,7 @@ function exportCsv(S) {
     function drain() { let n = 0; for (const [pid, txt] of outbox) { if (n++ >= 6) break; pubAll(p + "/me/" + pid, txt); outbox.delete(pid); } }
     const okSet = {};
     const report = () => { const n = Object.keys(okSet).filter((k) => okSet[k]).length; diag && diag(n > 0 ? "免伺服器模式：中繼站已連線（" + n + "/" + urls.length + "）。請保持此分頁開啟、電腦不要休眠；結束後請匯出紀錄。" : "無法連上中繼站（公用 MQTT）。請檢查這台電腦的網路／防火牆是否允許 wss 連線，系統會持續重試。", n > 0); };
-    mqs = urls.map((u) => Mqtt(u, [p + "/act"], { onMessage: onMsg, onStatus(st) { okSet[u] = st === "ok"; report(); if (st === "ok") { lastC = ""; Object.keys(lastMe).forEach((k) => delete lastMe[k]); dirty = true; } } }));
+    mqs = urls.map((u) => Mqtt(u, [p + "/act"], { onMessage: onMsg, onStatus(st) { okSet[u] = st === "ok"; report(); if (st === "ok") { lastK = 0; setTimeout(() => pubK(true), 50); lastC = ""; Object.keys(lastMe).forEach((k) => delete lastMe[k]); dirty = true; } } }));
     hub.listeners.push(() => { dirty = true; });
     ticker(() => { if (dirty) { dirty = false; flush(false); } }, 100); // 0.1 秒整理一次，縮短作答回饋
     ticker(drain, 100);
@@ -1447,6 +1686,7 @@ function exportCsv(S) {
       let room = null;
       try { room = JSON.parse(localStorage.getItem("kj_room") || "null"); } catch (e) {}
       if (!room || !room.code) { room = { code: newCode(), key: newCode() + newCode() }; try { localStorage.setItem("kj_room", JSON.stringify(room)); } catch (e) {} }
+      loadSavedContent(); // 主持人先前改過的題目
       const hub = makeHub();
       try { const saved = JSON.parse(localStorage.getItem("kj_hoststate") || "null"); if (saved && saved.room === room.code && saved.S) { Object.assign(hub.S, saved.S); hub.S.ver++; } } catch (e) {}
       const aud = location.origin + location.pathname.replace(/index\.html$/, "") + "#" + room.code;
@@ -1477,6 +1717,7 @@ function exportCsv(S) {
   }
   function bootDemo(root) {
     // 示範模式（直接開啟檔案）：主持人畫面 + 手機預覽 + 模擬觀眾
+    loadSavedContent();
     const hub = makeHub();
     document.body.insertAdjacentHTML("afterbegin", '<div class="demo-banner">示範模式：資料只存在這個視窗，手機掃 QR 無法加入。現場請執行 node server.js，並用電腦開啟顯示的 /host 網址。</div>');
     root.style.cssText = "height:100%;padding-top:26px";
