@@ -109,6 +109,7 @@ textarea.field{min-height:92px;resize:vertical}
 .steps button{border:1px solid rgba(255,255,255,.25);background:transparent;color:#cfe6e4;padding:5px 12px;border-radius:999px;font-size:.85em;font-weight:700}
 .steps button.on{background:var(--amber);border-color:var(--amber);color:#2b1d00}
 .steps button.past{background:rgba(255,255,255,.12)}
+.updbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);background:#E4572E;color:#fff;font-weight:800;padding:10px 18px;border-radius:999px;z-index:60;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .h-stat{display:flex;align-items:center;gap:14px;white-space:nowrap}
 .h-stat b{font-size:1.5em}
 .h-q{background:var(--coral);border-radius:999px;padding:2px 12px;font-weight:800;font-size:.85em}
@@ -397,6 +398,7 @@ const ROLES = [
   { k: "s", n: "巡輔／特教", c: "#E4572E" },
   { k: "o", n: "行政／其他", c: "#6C5B7B" },
 ];
+const BUILD = "2026-11-20a"; // 程式版本：每次更新網站都要改，舊分頁開啟時會自動換成新版
 const BANK = "2026-11-18-host"; // 題庫版本：內建題目改版時更新，舊的主持人修改紀錄就不會蓋過新題目
 const STAGES = [
   { id: "lobby", short: "入場", name: "入場與暖身" },
@@ -1488,7 +1490,7 @@ function exportCsv(S) {
         if (!same) { msg("進行中的這一輪不能增刪題目或選項、不能改正解與秒數。請先切到其他階段再改。", true); return; }
       }
       saveContent(r.ok); ed.draft = clone(CONTENT); ed.dirty = false; drawEd();
-      msg("已儲存，手機畫面會在幾秒內更新。題目存在這台電腦的瀏覽器裡；換電腦請先「匯出題目檔」。");
+      msg("已儲存，手機畫面會在幾秒內更新。注意：修改只存在這台電腦，別台電腦看不到；要在別台用，請「匯出題目檔」，再到那台「匯入題目檔」。");
     }
     function drawEd() {
       const d = ed.draft, lk = lockedTab(), L = ed.tab === lk;
@@ -1868,10 +1870,24 @@ function exportCsv(S) {
     if (!id) { id = "u" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set("kj_pid", id); }
     return id;
   }
+  async function latestBuild() {
+    try {
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 3000);
+      const r = await fetch(location.pathname, { cache: "reload", signal: ctl.signal }); clearTimeout(tm);
+      const m = r.ok && (await r.text()).match(/const BUILD = "([^"]+)"/);
+      return m ? m[1] : null;
+    } catch (e) { return null; }
+  }
   async function boot() {
     const root = document.getElementById("app");
     const isFile = location.protocol === "file:";
     if (isFile) return bootDemo(root);
+    // 這台電腦的瀏覽器若還留著舊版網頁，先自動換成網站上的最新版（每個版本只重新載入一次，不會一直重整）
+    const remote = await latestBuild();
+    if (remote && remote !== BUILD) {
+      let tried = null; try { tried = sessionStorage.getItem("kj_upd"); } catch (e) {}
+      if (tried !== remote) { try { sessionStorage.setItem("kj_upd", remote); } catch (e) {} location.reload(); return; }
+    }
     let server = false;
     try {
       const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 2500);
@@ -1897,7 +1913,20 @@ function exportCsv(S) {
       root.style.cssText = "height:100%;padding-top:26px";
       const hostEl = document.createElement("div"); hostEl.style.height = "100%"; root.appendChild(hostEl);
       mountHost(hostEl, localTransport(hub, "host-main", true, { demo: false, relay: true, info: { urls: [aud] } }));
-      startRelayHost(hub, room.code, room.key, (txt, ok) => { const b = document.getElementById("rb"); if (b) { b.textContent = txt; b.style.background = ok ? "#0E7C7B" : "#E4572E"; } });
+      let relayTxt = "免伺服器模式：正在連線中繼站…", srcTxt = "";
+      const drawRb = () => { const b = document.getElementById("rb"); if (b) b.textContent = relayTxt + (srcTxt ? "　｜　" + srcTxt : ""); };
+      startRelayHost(hub, room.code, room.key, (txt, ok) => { relayTxt = txt; drawRb(); const b = document.getElementById("rb"); if (b) b.style.background = ok ? "#0E7C7B" : "#E4572E"; });
+      const showSrc = () => { // 狀態列標出這台電腦用的是哪一份題目
+        if (!contentVer) srcTxt = "題目：網站內建版";
+        else { const t = new Date(contentVer), p2 = (n) => String(n).padStart(2, "0"); srcTxt = "題目：這台電腦的修改版（" + (t.getMonth() + 1) + "/" + t.getDate() + " " + p2(t.getHours()) + ":" + p2(t.getMinutes()) + "儲存）"; }
+        drawRb();
+      };
+      showSrc(); contentListeners.push(showSrc);
+      setInterval(async () => { // 分頁開很久時：網站有新版就提醒，不在上課中途自動重整
+        if (document.querySelector(".updbar")) return;
+        const b = await latestBuild();
+        if (b && b !== BUILD) { const u = document.createElement("div"); u.className = "updbar"; u.textContent = "遊戲網站有新版本，按這裡更新（進度會保留）"; u.onclick = () => location.reload(); document.body.appendChild(u); }
+      }, 5 * 60 * 1000);
       const save = () => { try { localStorage.setItem("kj_hoststate", JSON.stringify({ room: room.code, S: hub.S }, (k, v) => (k[0] === "_" ? undefined : v))); } catch (e) {} };
       hub.listeners.push(() => { clearTimeout(save.t); save.t = setTimeout(save, 800); });
       return;
