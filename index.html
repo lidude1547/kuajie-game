@@ -202,7 +202,6 @@ textarea.field{min-height:92px;resize:vertical}
 .endstats div{background:rgba(255,255,255,.12);border-radius:18px;padding:1.4vh 2vw;text-align:center}
 .endstats b{display:block;font-size:clamp(30px,4vw,70px);color:var(--amber)}
 .demo-banner{position:fixed;left:0;right:0;top:0;background:var(--coral);color:#fff;text-align:center;font-weight:700;padding:4px 8px;font-size:13px;z-index:50}
-.vtag{position:fixed;right:8px;top:0;color:#fff;font-weight:700;padding:4px 0;font-size:13px;z-index:51;opacity:.85;pointer-events:none}
 .demo-tools{position:fixed;left:14px;bottom:70px;z-index:40;display:flex;gap:8px}
 .phone{position:fixed;right:10px;bottom:56px;width:330px;height:600px;transform:scale(.72);border:10px solid #0b1f26;border-radius:34px;overflow:hidden;z-index:40;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff;transform-origin:bottom right}
 .phone.min{height:48px;width:200px}
@@ -398,8 +397,7 @@ const ROLES = [
   { k: "s", n: "巡輔／特教", c: "#E4572E" },
   { k: "o", n: "行政／其他", c: "#6C5B7B" },
 ];
-const BANK = "2026-11-20"; // 題庫版本：內建題目改版時更新，舊的主持人修改紀錄就不會蓋過新題目
-const BANK_LABEL = "題庫2026.11.20版"; // 顯示在主持人畫面右上角，方便確認每台電腦都是最新版
+const BANK = "2026-11-17-ch"; // 題庫版本：內建題目改版時更新，舊的主持人修改紀錄就不會蓋過新題目
 const STAGES = [
   { id: "lobby", short: "入場", name: "入場與暖身" },
   { id: "r1", short: "R1", name: "現場溫度計" },
@@ -1703,7 +1701,6 @@ function exportCsv(S) {
       try { const saved = JSON.parse(localStorage.getItem("kj_hoststate") || "null"); if (saved && saved.room === room.code && saved.S) { Object.assign(hub.S, saved.S); hub.S.ver++; } } catch (e) {}
       const aud = location.origin + location.pathname.replace(/index\.html$/, "") + "#" + room.code;
       document.body.insertAdjacentHTML("afterbegin", '<div class="demo-banner" id="rb" style="background:#6C5B7B">免伺服器模式：正在連線中繼站…</div>');
-      document.body.insertAdjacentHTML("afterbegin", '<div class="vtag">' + BANK_LABEL + '</div>');
       root.style.cssText = "height:100%;padding-top:26px";
       const hostEl = document.createElement("div"); hostEl.style.height = "100%"; root.appendChild(hostEl);
       mountHost(hostEl, localTransport(hub, "host-main", true, { demo: false, relay: true, info: { urls: [aud] } }));
